@@ -10,28 +10,39 @@
 !.yarn/releases
 !.yarn/versions
 
+# pnpm
+pnpm-debug.log*
+.pnpm-debug.log*
+
 # testing
 /coverage
 
 # next.js
 /.next/
 /out/
-
-# production
 /build
+
+# production builds (если используете отдельную папку)
+/dist
 
 # misc
 .DS_Store
 *.pem
+*.log
 
-# debug
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — НЕ коммитим .env.local и другие секреты!
+.env.local
+.env.local.*
+.env.development.local
+.env.test.local
+.env.production.local
+# Но разрешаем коммитить .env (публичные переменные)
+!.env
 
 # vercel
 .vercel
@@ -39,3 +50,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDEs and editors
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
