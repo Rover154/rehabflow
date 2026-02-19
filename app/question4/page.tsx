@@ -1,5 +1,5 @@
 'use client';
-import { useAnswersStore } from '@/stores/useAnswersStore';
+import { useAnswersStore, type Format } from '@/stores/useAnswersStore';
 import { Button } from "@/components/ui/button";
 import { useStep } from '@/hooks/useStep';
 import { useRouter } from 'next/navigation';

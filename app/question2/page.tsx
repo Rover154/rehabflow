@@ -3,6 +3,7 @@ import { useAnswersStore } from '@/stores/useAnswersStore';
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 import ProgressBar from '@/components/ProgressBar';
+import type { TimePeriod } from '@/stores/useAnswersStore';
 
 const timeOptions = [
   { key: 'acute', label: 'Меньше 1 месяца (острый период)' },

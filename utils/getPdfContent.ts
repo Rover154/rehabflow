@@ -6,11 +6,12 @@ export const getPdfContent = (answers: ReturnType<typeof useAnswersStore.getStat
     stroke: 'Инсульт',
     infarct: 'Инфаркт',
     trauma: 'Травма',
-    chronic: 'Хроническое заболевание',
-    other: 'Общее восстановление'
+    stress: 'Стресс',
+    other: 'Другое'
   };
 
-  const diagnosisLabel = answers.diagnosis ? diagnosisMap[answers.diagnosis] || 'Восстановление' : 'Восстановление';
+  const firstDiagnosis = answers.diagnoses[0];
+  const diagnosisLabel = firstDiagnosis ? diagnosisMap[firstDiagnosis] || 'Восстановление' : 'Восстановление';
 
   return {
     title: `Методичка по реабилитации: ${diagnosisLabel}`,

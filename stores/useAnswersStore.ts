@@ -2,9 +2,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type Diagnosis = 'stroke' | 'infarct' | 'trauma' | 'stress' | 'other';
-type TimePeriod = 'acute' | '1-3' | '3-6' | '6plus' | '1yplus' | 'any';
-type Format = 'self' | 'online' | 'personal' | 'help';
+export type Diagnosis = 'stroke' | 'infarct' | 'trauma' | 'stress' | 'other';
+export type TimePeriod = 'acute' | '1-3' | '3-6' | '6plus' | '1yplus' | 'any';
+export type Format = 'self' | 'online' | 'personal' | 'help';
 
 interface PatientInfo {
   name: string;
