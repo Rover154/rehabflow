@@ -1,21 +1,27 @@
 // components/ProgressBar.tsx
 'use client';
-import { Progress } from "@/components/ui/progress";
 
 interface ProgressBarProps {
   currentStep: number;
+  totalSteps?: number;
 }
 
-export default function ProgressBar({ currentStep }: ProgressBarProps) {
-  const percentage = Math.round((currentStep / 5) * 100);
+export default function ProgressBar({ currentStep, totalSteps = 7 }: ProgressBarProps) {
+  const progress = (currentStep / totalSteps) * 100;
+  
+  // Градиент от красного к зеленому
+  const getColor = (percent: number) => {
+    if (percent < 33) return 'from-red-500 to-orange-500';
+    if (percent < 66) return 'from-orange-500 to-yellow-500';
+    return 'from-yellow-500 to-green-500';
+  };
 
   return (
-    <div className="px-6 pt-8">
-      <Progress value={percentage} className="h-1.5 bg-gray-100" />
-      <div className="flex justify-between text-xs text-gray-400 mt-1.5 px-1">
-        <span>Шаг {currentStep} из 5</span>
-        <span>{percentage}%</span>
-      </div>
+    <div className="w-full bg-gray-100 h-1.5">
+      <div
+        className={`h-full bg-gradient-to-r ${getColor(progress)} transition-all duration-500 ease-out`}
+        style={{ width: `${progress}%` }}
+      />
     </div>
   );
 }

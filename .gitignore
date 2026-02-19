@@ -10,9 +10,8 @@
 !.yarn/releases
 !.yarn/versions
 
-# pnpm
-pnpm-debug.log*
-.pnpm-debug.log*
+# npm debug logs
+npm-debug.log*
 
 # testing
 /coverage

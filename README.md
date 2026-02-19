@@ -1,36 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RehabFlow - Интерактивное приложение для реабилитации
 
-## Getting Started
+Приложение для создания персональных программ реабилитации после инсульта, инфаркта, травм и других состояний.
 
-First, run the development server:
+## Возможности
 
+- 📋 Подробная анкета пациента (имя, возраст, рост, вес)
+- 🏥 Множественный выбор диагнозов с возможностью описания
+- ⏱ Определение времени с момента события
+- 💊 Выбор симптомов и проблем
+- 🩺 Учет хронических заболеваний и противопоказаний
+- 📊 Прогресс-бар с градиентом от красного к зеленому
+- 📱 Интеграция с Telegram ботом @cigunrehab_bot
+- 💳 Возможность оплаты методички (299 ₽)
+- 🤖 Автоматическая отправка данных в Telegram канал
+
+## Установка
+
+1. Клонируйте репозиторий:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd rehabflow
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Установите зависимости:
+```bash
+npm install
+# или
+pnpm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Создайте файл `.env.local` на основе `.env.example`:
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Заполните переменные окружения в `.env.local`:
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
+```
 
-## Learn More
+## Настройка Telegram бота
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Создание бота
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Откройте [@BotFather](https://t.me/BotFather) в Telegram
+2. Отправьте команду `/newbot`
+3. Следуйте инструкциям для создания бота
+4. Сохраните полученный токен в `.env.local` как `TELEGRAM_BOT_TOKEN`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Получение Chat ID
 
-## Deploy on Vercel
+1. Создайте канал или группу для получения уведомлений
+2. Добавьте вашего бота в канал/группу как администратора
+3. Отправьте любое сообщение в канал
+4. Откройте в браузере: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
+5. Найдите `chat.id` в ответе и сохраните его в `.env.local` как `TELEGRAM_CHAT_ID`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Запуск приложения
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Режим разработки:
+```bash
+npm run dev
+# или
+pnpm dev
+```
+
+Откройте [http://localhost:3000](http://localhost:3000) в браузере.
+
+### Production сборка:
+```bash
+npm run build
+npm start
+```
+
+## Структура проекта
+
+```
+rehabflow/
+├── app/
+│   ├── page.tsx              # Главная страница
+│   ├── question0/            # Анкета пациента
+│   ├── question1/            # Выбор диагнозов
+│   ├── question2/            # Время с момента события
+│   ├── question3/            # Симптомы
+│   ├── question4/            # Формат занятий
+│   ├── question5/            # Контактные данные
+│   ├── question6/            # Хронические заболевания
+│   ├── result/               # Страница результата
+│   └── api/
+│       ├── send-to-telegram/ # API для отправки в Telegram
+│       └── submit-recommendation/
+├── components/
+│   ├── ProgressBar.tsx       # Прогресс-бар с градиентом
+│   └── ui/                   # UI компоненты
+├── stores/
+│   └── useAnswersStore.ts    # Zustand store для данных
+└── utils/
+    └── getRecommendation.ts  # Логика подбора рекомендаций
+```
+
+## Интеграция с Telegram ботом
+
+Приложение интегрировано с [@cigunrehab_bot](https://t.me/cigunrehab_bot). 
+
+При выборе формата "Самостоятельно по методичке":
+1. Пользователь заполняет анкету
+2. Данные отправляются в Telegram канал
+3. Пользователь перенаправляется в бот
+4. Бот генерирует персональную программу упражнений
+5. Пользователь может скачать методичку бесплатно или купить за 299 ₽
+
+## Контакты
+
+- Телефон: +7 953 790 20 10
+- Telegram: [@cigunrehab](https://t.me/cigunrehab)
+- Бот: [@cigunrehab_bot](https://t.me/cigunrehab_bot)
+
+## Технологии
+
+- Next.js 14
+- React 18
+- TypeScript
+- Tailwind CSS
+- Zustand (state management)
+- Shadcn/ui (UI components)
+- Framer Motion (animations)
+
+## Лицензия
+
+Proprietary - Все права защищены

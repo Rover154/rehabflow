@@ -31,9 +31,9 @@ export default function Home() {
               Подберём программу<br />под вашу ситуацию
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
-              Ответьте на 5 вопросов — это займёт всего 2 минуты.
+              Ответьте на 5 вопросов — это займёт 2 минуты.
               <br />
-              Получите персональную рекомендацию по цигун-реабилитации.
+              После этого вы получите персональную рекомендацию.
             </p>
           </div>
 
@@ -45,7 +45,7 @@ export default function Home() {
             <Button
               size="lg"
               className="w-full h-14 sm:h-16 text-lg sm:text-xl font-medium bg-green-600 hover:bg-green-700 rounded-2xl shadow-lg shadow-green-200/50"
-              onClick={() => router.push("/question1")}
+              onClick={() => router.push("/question0")}
             >
               НАЧАТЬ
               <ArrowRight className="ml-3 h-6 w-6" />
@@ -54,7 +54,7 @@ export default function Home() {
 
           {/* Нижняя подсказка */}
           <p className="text-sm text-gray-500 mt-10">
-            Безопасные практики цигун для восстановления после инсульта, инфаркта, травм и операций
+            Персональная программа реабилитации после инсульта, инфаркта, травм и операций
           </p>
         </motion.div>
       </div>

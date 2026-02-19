@@ -1,7 +1,8 @@
 'use client';
 import { useAnswersStore } from '@/stores/useAnswersStore';
 import { Button } from "@/components/ui/button";
-import { useStep } from '@/hooks/useStep';
+import { useRouter } from 'next/navigation';
+import ProgressBar from '@/components/ProgressBar';
 
 const timeOptions = [
   { key: 'acute', label: 'Меньше 1 месяца (острый период)' },
@@ -13,22 +14,28 @@ const timeOptions = [
 
 export default function Question2Screen() {
   const { time, setTime } = useAnswersStore();
-  const { goBack, goNext } = useStep();
+  const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <ProgressBar currentStep={2} />
-      <div className="max-w-md mx-auto px-4 pt-8">
-        <h2 className="text-2xl font-semibold mb-8">Сколько времени прошло?</h2>
+      
+      <div className="flex-1 max-w-md mx-auto px-4 py-6">
+        <h2 className="text-2xl font-semibold mb-2 text-center">
+          Сколько времени прошло?
+        </h2>
+        <p className="text-center text-gray-600 mb-6 text-sm">
+          С момента события или начала проблемы
+        </p>
         
         <div className="space-y-3">
           {timeOptions.map((opt) => (
             <button
               key={opt.key}
-              onClick={() => setTime(opt.key as any)}
-              className={`w-full text-left border-2 rounded-2xl px-6 py-5 transition-all hover:border-green-500 ${
-                time === opt.key 
-                  ? 'border-green-600 bg-green-50 shadow-sm' 
+              onClick={() => setTime(opt.key as TimePeriod)}
+              className={`w-full text-left border-2 rounded-2xl px-6 py-4 transition-all hover:border-green-500 ${
+                time === opt.key
+                  ? 'border-green-600 bg-green-50 shadow-sm'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
@@ -37,15 +44,20 @@ export default function Question2Screen() {
           ))}
         </div>
 
-        <div className="flex gap-3 mt-12">
-          <Button variant="outline" size="lg" onClick={goBack} className="flex-1">
+        <div className="flex gap-3 mt-10">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={() => router.back()} 
+            className="flex-1 h-12"
+          >
             ← Назад
           </Button>
           <Button 
             size="lg" 
-            onClick={goNext} 
+            onClick={() => router.push('/question3')} 
             disabled={!time}
-            className="flex-1 bg-green-600 hover:bg-green-700"
+            className="flex-1 h-12 bg-green-600 hover:bg-green-700"
           >
             Далее →
           </Button>

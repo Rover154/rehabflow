@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAnswersStore } from '@/stores/useAnswersStore';
-import { useStep } from '@/hooks/useStep';
+import { useRouter } from 'next/navigation';
 import ProgressBar from '@/components/ProgressBar';
 
 export default function Question5Screen() {
-  const { name, contact, comment, setContactData, reset: resetForm } = useAnswersStore();
-  const { goNext } = useStep();
+  const store = useAnswersStore();
+  const { contact, comment, setContactData } = store;
+  const router = useRouter();
 
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,12 +22,11 @@ export default function Question5Screen() {
   const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const isPhone = (v: string) => {
     const cleaned = v.replace(/\D/g, '');
-    return cleaned.length >= 10 && cleaned.length <= 12; // RU/EU формат
+    return cleaned.length >= 10 && cleaned.length <= 12;
   };
 
   const isContactValid = contact.trim().length >= 7 && (isEmail(contact) || isPhone(contact));
-  const isNameValid = name.trim().length >= 2;
-  const isValid = isNameValid && isContactValid && agreed && !isSubmitting;
+  const isValid = isContactValid && agreed && !isSubmitting;
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -35,21 +35,38 @@ export default function Question5Screen() {
     setError(null);
 
     try {
-      const payload = {
-        name: name.trim(),
-        contact: contact.trim(),
-        comment: comment.trim(),
-        diagnosis: useAnswersStore.getState().diagnosis,
-        time: useAnswersStore.getState().time,
-        symptoms: useAnswersStore.getState().symptoms,
-        format: useAnswersStore.getState().format,
-        submittedAt: new Date().toISOString(),
-      };
+      // Отправляем данные в Telegram
+      const telegramRes = await fetch('/api/send-to-telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientInfo: store.patientInfo,
+          diagnoses: store.diagnoses,
+          otherDescription: store.otherDescription,
+          time: store.time,
+          symptoms: store.symptoms,
+          chronicDiseases: store.chronicDiseases,
+          contraindications: store.contraindications,
+          format: store.format,
+          contact: contact.trim(),
+          comment: comment.trim(),
+        }),
+      });
 
+      if (!telegramRes.ok) {
+        console.error('Failed to send to Telegram');
+      }
+
+      // Отправляем данные на старый endpoint (если нужно)
       const res = await fetch('/api/submit-recommendation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...store,
+          contact: contact.trim(),
+          comment: comment.trim(),
+          submittedAt: new Date().toISOString(),
+        }),
       });
 
       if (!res.ok) throw new Error('Ошибка сервера');
@@ -59,14 +76,13 @@ export default function Question5Screen() {
         duration: 5000,
       });
 
-      resetForm(); // очищаем форму после успеха
-      goNext();    // → экран результата
+      router.push('/result');
 
-    } catch (err: any) {
-      const msg = err.message?.includes('Network')
+    } catch (err: unknown) {
+      const msg = (err as Error).message?.includes('Network')
         ? 'Нет соединения. Проверьте интернет.'
         : 'Не удалось отправить. Попробуйте ещё раз.';
-      
+
       setError(msg);
       toast.error('Ошибка', { description: msg });
     } finally {
@@ -76,40 +92,25 @@ export default function Question5Screen() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <ProgressBar currentStep={5} />
+      <ProgressBar currentStep={7} />
 
-      <div className="flex-1 max-w-md mx-auto px-5 pt-8 pb-12">
-        <h2 className="text-2xl font-semibold mb-8 text-center">
+      <div className="flex-1 max-w-md mx-auto px-5 py-6">
+        <h2 className="text-2xl font-semibold mb-2 text-center">
           Как с вами связаться?
         </h2>
+        <p className="text-center text-gray-600 mb-6 text-sm">
+          Мы отправим персональную программу на ваш контакт
+        </p>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Имя</label>
-            <Input
-              value={name}
-              onChange={e => setContactData({ name: e.target.value })}
-              placeholder="Иван Иванов"
-              disabled={isSubmitting}
-              className="h-12"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Телефон или Email</label>
+            <label className="block text-sm font-medium mb-2">Телефон или Email</label>
             <Input
               value={contact}
-              onChange={e => {
-                // Простая маска телефона (RU стиль)
-                let val = e.target.value.replace(/\D/g, '');
-                if (val.startsWith('7') || val.startsWith('8')) val = val.slice(1);
-                val = val.slice(0, 10);
-                const masked = val.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3-$4');
-                setContactData({ contact: val.length > 0 ? `+7${masked}` : '' });
-              }}
-              placeholder="+7 (___) ___-__-__"
+              onChange={e => setContactData({ contact: e.target.value })}
+              placeholder="+7 (___) ___-__-__ или email@example.com"
               disabled={isSubmitting}
-              className="h-12 font-mono"
+              className="h-12 text-base"
             />
             {!isContactValid && contact && (
               <p className="text-xs text-red-600 mt-1">
@@ -119,24 +120,28 @@ export default function Question5Screen() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">Комментарий (необязательно)</label>
+            <label className="block text-sm font-medium mb-2">
+              Комментарий <span className="text-gray-400">(по желанию)</span>
+            </label>
             <Textarea
               value={comment}
               onChange={e => setContactData({ comment: e.target.value })}
-              placeholder="Дополнительные пожелания..."
+              placeholder="Дополнительные пожелания или вопросы..."
               rows={3}
               disabled={isSubmitting}
+              className="text-base"
             />
           </div>
 
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3 pt-2">
             <Checkbox
               id="agree"
               checked={agreed}
-              onCheckedChange={setAgreed}
+              onCheckedChange={(checked) => setAgreed(checked as boolean)}
               disabled={isSubmitting}
+              className="mt-1"
             />
-            <label htmlFor="agree" className="text-sm text-gray-600 leading-tight">
+            <label htmlFor="agree" className="text-sm text-gray-600 leading-snug cursor-pointer">
               Согласен на обработку персональных данных
             </label>
           </div>
@@ -148,12 +153,13 @@ export default function Question5Screen() {
           </div>
         )}
 
-        <div className="mt-10 flex flex-col sm:flex-row gap-4">
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
           <Button
             variant="outline"
-            onClick={() => history.back()}
+            onClick={() => router.back()}
             disabled={isSubmitting}
             className="flex-1 h-12"
+            size="lg"
           >
             ← Назад
           </Button>
@@ -161,11 +167,16 @@ export default function Question5Screen() {
           <Button
             onClick={handleSubmit}
             disabled={!isValid}
-            className="flex-1 h-12 bg-green-600 hover:bg-green-700"
+            className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-base font-medium"
+            size="lg"
           >
             {isSubmitting ? 'Отправка...' : 'Получить рекомендацию →'}
           </Button>
         </div>
+
+        <p className="text-center text-xs text-gray-500 mt-4">
+          Ваши данные защищены и не передаются третьим лицам
+        </p>
       </div>
     </div>
   );

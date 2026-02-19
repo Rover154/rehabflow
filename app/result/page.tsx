@@ -1,106 +1,178 @@
 'use client';
 import { useAnswersStore } from '@/stores/useAnswersStore';
 import { Button } from "@/components/ui/button";
-import { getPdfContent } from '@/utils/getPdfContent';
-import { Download, MessageCircle, RefreshCcw } from "lucide-react";
+import { CheckCircle2, Download, MessageCircle, RefreshCcw, Phone } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { jsPDF } from 'jspdf';
 import { useEffect, useState } from 'react';
-
-// Simplified font handling for demo - using standard font or would need to load custom font for Cyrillic
-// For this environment, we'll try to use a robust approach or fallback to window.print()
-const generatePDF = (content: ReturnType<typeof getPdfContent>) => {
-  try {
-    const doc = new jsPDF();
-    
-    // Note: jsPDF default fonts don't support Cyrillic. 
-    // In a real production app, we would load a font like Roboto-Regular.ttf
-    // For now, we will use a workaround or rely on the user to use "Print to PDF"
-    // But let's try to add some content.
-    
-    doc.setFontSize(20);
-    // Transliteration or English fallback would be safer without font files, 
-    // but let's try to write text and see if the environment has system fonts or if it shows garbled text.
-    // Actually, without a loaded font, Cyrillic will likely be garbled in jsPDF.
-    // So we will trigger window.print() as the primary "Download" action for this MVP
-    // to ensure the user gets a readable Russian document.
-    
-    window.print();
-  } catch (e) {
-    console.error(e);
-    window.print();
-  }
-};
 
 export default function ResultScreen() {
   const answers = useAnswersStore();
   const router = useRouter();
-  const [content, setContent] = useState<ReturnType<typeof getPdfContent> | null>(null);
+  const [botUrl, setBotUrl] = useState('');
 
   useEffect(() => {
-    setContent(getPdfContent(answers));
+    // Формируем URL для бота с данными
+    const botUsername = 'cigunrehab_bot';
+    const startParam = encodeURIComponent(JSON.stringify({
+      name: answers.patientInfo.name,
+      age: answers.patientInfo.age,
+      diagnoses: answers.diagnoses,
+      time: answers.time,
+      symptoms: answers.symptoms,
+      format: answers.format,
+    }));
+    
+    setBotUrl(`https://t.me/${botUsername}?start=${startParam}`);
   }, [answers]);
 
-  if (!content) return null;
+  const isSelfFormat = answers.format === 'self';
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 print:p-0 print:max-w-none">
-      {/* Header Buttons (Hidden in Print) */}
-      <div className="flex justify-between items-center mb-8 print:hidden">
-        <Button variant="ghost" onClick={() => router.push('/')}>
-          <RefreshCcw className="mr-2 h-4 w-4" />
-          В начало
-        </Button>
-      </div>
-
-      <div className="bg-white rounded-3xl shadow-lg p-8 sm:p-12 print:shadow-none print:p-0">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">{content.title}</h1>
-          <p className="text-lg text-green-700 font-medium">{content.subtitle}</p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-green-50/30">
+      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 text-white rounded-2xl text-3xl mb-4">
+            ✓
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+            Ваша программа готова!
+          </h1>
+          <p className="text-lg text-gray-600">
+            Спасибо за заполнение анкеты
+          </p>
         </div>
 
-        <div className="prose max-w-none mb-10 text-gray-600">
-          <p className="text-lg leading-relaxed">{content.intro}</p>
-        </div>
+        {/* Main Card */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-10 mb-6">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Что дальше?
+            </h2>
 
-        <div className="space-y-8">
-          <h3 className="text-2xl font-semibold text-gray-800 border-b pb-2">Рекомендуемые упражнения</h3>
-          
-          {content.exercises.map((ex, i) => (
-            <div key={i} className="bg-green-50/50 rounded-2xl p-6 border border-green-100 print:border-gray-200 print:bg-white">
-              <h4 className="text-xl font-bold text-green-800 mb-3">{ex.name}</h4>
-              <p className="text-gray-700 mb-4">{ex.description}</p>
-              <div className="h-40 bg-white border-2 border-dashed border-green-200 rounded-xl flex items-center justify-center text-green-600/50 font-medium">
-                {ex.imagePlaceholder}
-              </div>
+            {isSelfFormat ? (
+              <>
+                <p className="text-gray-700 mb-6">
+                  Вы выбрали формат <strong>&quot;Самостоятельно по методичке&quot;</strong>.
+                  Мы подготовим для вас персональный комплекс из 10-15 упражнений по цигун.
+                </p>
+                
+                <div className="bg-green-50 rounded-2xl p-6 mb-6">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                    Что включено:
+                  </h3>
+                  <ul className="space-y-2 text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-1">•</span>
+                      <span>Персональный комплекс упражнений (10-15 шт)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-1">•</span>
+                      <span>Иллюстрации с правильной техникой</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-1">•</span>
+                      <span>Подробные описания каждого упражнения</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-600 mt-1">•</span>
+                      <span>Рекомендации по частоте и длительности</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-blue-50 rounded-2xl p-6 mb-6 text-center">
+                  <p className="text-2xl font-bold text-blue-900 mb-2">299 ₽</p>
+                  <p className="text-sm text-gray-600">Методичка в формате PDF</p>
+                </div>
+
+                {/* Кнопка перехода в бот */}
+                <Button 
+                  size="lg" 
+                  className="w-full h-14 text-lg bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg mb-4"
+                  onClick={() => window.open(botUrl, '_blank')}
+                >
+                  <Download className="mr-2 h-5 w-5" />
+                  Скачать бесплатную версию через бот
+                </Button>
+
+                <p className="text-xs text-center text-gray-500 mb-6">
+                  Бот сгенерирует программу и выдаст результат бесплатно на три упражнения
+                </p>
+
+                <div className="border-t pt-6">
+                  <p className="text-center text-gray-600 mb-4">
+                    Или купите готовую методичку за 299 ₽
+                  </p>
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="w-full h-12 border-green-600 text-green-700 hover:bg-green-50"
+                    onClick={() => window.open('https://t.me/cigunrehab', '_blank')}
+                  >
+                    Оплатить по СБП
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-700 mb-6">
+                  Мы получили вашу заявку и свяжемся с вами в ближайшее время для уточнения деталей.
+                </p>
+                
+                <div className="bg-green-50 rounded-2xl p-6 mb-6">
+                  <h3 className="font-semibold text-lg mb-3">Ваш выбор:</h3>
+                  <p className="text-gray-700">
+                    {answers.format === 'online' && 'Занятия с инструктором онлайн'}
+                    {answers.format === 'personal' && 'Личные занятия в Новосибирске'}
+                    {answers.format === 'help' && 'Помощь в выборе формата'}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="font-semibold mb-4 text-center">Свяжитесь с нами:</h3>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                variant="outline"
+                size="lg"
+                className="flex-1 h-12"
+                onClick={() => window.open('tel:+79537902010', '_blank')}
+              >
+                <Phone className="mr-2 h-5 w-5" />
+                +7 953 790 20 10
+              </Button>
+              
+              <Button 
+                variant="outline"
+                size="lg"
+                className="flex-1 h-12"
+                onClick={() => window.open('https://t.me/cigunrehab', '_blank')}
+              >
+                <MessageCircle className="mr-2 h-5 w-5" />
+                @cigunrehab
+              </Button>
             </div>
-          ))}
+          </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col sm:flex-row gap-4 print:hidden">
+        {/* Action Buttons */}
+        <div className="flex justify-center">
           <Button 
-            size="lg" 
-            className="flex-1 bg-green-600 hover:bg-green-700 h-14 text-lg"
-            onClick={() => window.print()}
+            variant="ghost"
+            size="lg"
+            className="h-12"
+            onClick={() => {
+              answers.reset();
+              router.push('/');
+            }}
           >
-            <Download className="mr-2 h-5 w-5" />
-            Скачать методичку (PDF)
+            <RefreshCcw className="mr-2 h-5 w-5" />
+            Пройти заново
           </Button>
-          
-          <Button 
-            size="lg" 
-            variant="outline"
-            className="flex-1 h-14 text-lg border-green-600 text-green-700 hover:bg-green-50"
-            onClick={() => window.open('https://t.me/cigunrehab', '_blank')}
-          >
-            <MessageCircle className="mr-2 h-5 w-5" />
-            Записаться на консультацию
-          </Button>
-        </div>
-
-        {/* Print-only Footer */}
-        <div className="hidden print:block mt-10 pt-4 border-t text-center text-sm text-gray-500">
-          <p>Скачано с RehabFlow | {content.footer}</p>
         </div>
       </div>
     </div>

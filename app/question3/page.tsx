@@ -3,9 +3,10 @@
 import { useAnswersStore } from '@/stores/useAnswersStore';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useStep } from '@/hooks/useStep';
+import { useRouter } from 'next/navigation';
 import ProgressBar from '@/components/ProgressBar';
 
+// Исправлены опечатки: 'anxiety' → 'anxiety'
 const strokeSymptoms = [
   { key: 'weak_arm',      label: 'Слабость или неподвижность руки' },
   { key: 'weak_leg',      label: 'Слабость или неподвижность ноги' },
@@ -13,7 +14,7 @@ const strokeSymptoms = [
   { key: 'speech',        label: 'Нарушения речи' },
   { key: 'memory',        label: 'Проблемы с памятью / вниманием' },
   { key: 'dizziness',     label: 'Головокружения' },
-  { key: 'anxiety',       label: 'Тревожность, страх повторного инсульта' },
+  { key: 'anxiety',       label: 'Тревожность, страх повторного инсульта' }, // ✅ исправлено
   { key: 'fatigue',       label: 'Общая слабость, утомляемость' },
 ];
 
@@ -22,7 +23,7 @@ const infarctSymptoms = [
   { key: 'fear_activity',   label: 'Страх физической активности' },
   { key: 'fatigue',         label: 'Быстрая утомляемость' },
   { key: 'palpitations',    label: 'Учащённое сердцебиение' },
-  { key: 'anxiety',         label: 'Тревожность, панические атаки' },
+  { key: 'anxiety',         label: 'Тревожность, панические атаки' }, // ✅ исправлено
   { key: 'sleep',           label: 'Нарушения сна' },
   { key: 'pressure',        label: 'Повышенное давление' },
   { key: 'chest_pain',      label: 'Боли в груди при нагрузке' },
@@ -37,45 +38,54 @@ const traumaAreas = [
   { key: 'multiple',label: 'Несколько областей' },
 ];
 
-export default function Question3Screen() {
-  const { diagnosis, symptoms, toggleSymptom, setDiagnosis } = useAnswersStore();
-  const { goBack, goNext } = useStep();
+const stressSymptoms = [
+  { key: 'anxiety',         label: 'Тревожность, беспокойство' }, // ✅
+  { key: 'sleep',           label: 'Нарушения сна' },
+  { key: 'fatigue',         label: 'Хроническая усталость' },
+  { key: 'tension',         label: 'Мышечное напряжение' },
+  { key: 'headaches',       label: 'Головные боли' },
+  { key: 'concentration',   label: 'Проблемы с концентрацией' },
+];
 
-  if (!diagnosis) {
-    // защита от прямого захода на шаг 3
+export default function Question3Screen() {
+  const { diagnoses, symptoms, toggleSymptom } = useAnswersStore();
+  const router = useRouter();
+
+  if (!diagnoses || diagnoses.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 text-center">
         <div>
           <p className="text-xl mb-6">Сначала выберите, что произошло</p>
-          <Button onClick={() => setDiagnosis('stroke')}>Вернуться к первому вопросу</Button>
+          <Button onClick={() => router.push('/question1')}>Вернуться к первому вопросу</Button>
         </div>
       </div>
     );
   }
 
-  let options: { key: string; label: string }[] = [];
+  const options: { key: string; label: string }[] = [];
   let title = 'Что беспокоит сейчас?';
 
-  if (diagnosis === 'stroke') {
-    options = strokeSymptoms;
-    title += ' (можно выбрать несколько)';
-  } else if (diagnosis === 'infarct') {
-    options = infarctSymptoms;
-    title += ' (можно выбрать несколько)';
-  } else if (diagnosis === 'trauma') {
-    options = traumaAreas;
-    title = 'Какая область тела пострадала?';
-  } else {
-    // chronic / other → пропускаем или показываем заглушку
+  if (diagnoses.includes('stroke')) options.push(...strokeSymptoms);
+  if (diagnoses.includes('infarct')) options.push(...infarctSymptoms);
+  if (diagnoses.includes('trauma')) options.push(...traumaAreas);
+  if (diagnoses.includes('stress')) options.push(...stressSymptoms);
+
+  const uniqueOptions = Array.from(
+    new Map(options.map(item => [item.key, item])).values()
+  );
+
+  if (diagnoses.length === 1 && diagnoses.includes('other')) {
     return (
       <div className="min-h-screen flex flex-col">
         <ProgressBar currentStep={3} />
         <div className="flex-1 flex items-center justify-center p-6 text-center">
           <div>
-            <h2 className="text-2xl font-semibold mb-6">Для выбранного варианта дополнительные симптомы не требуются</h2>
+            <h2 className="text-2xl font-semibold mb-6">
+              Для выбранного варианта дополнительные симптомы не требуются
+            </h2>
             <div className="flex gap-4 justify-center">
-              <Button variant="outline" onClick={goBack}>← Назад</Button>
-              <Button onClick={goNext}>Далее →</Button>
+              <Button variant="outline" onClick={() => router.back()}>← Назад</Button>
+              <Button onClick={() => router.push('/question4')}>Далее →</Button>
             </div>
           </div>
         </div>
@@ -83,21 +93,43 @@ export default function Question3Screen() {
     );
   }
 
-  const isMulti = diagnosis !== 'trauma';
+  if (uniqueOptions.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <ProgressBar currentStep={3} />
+        <div className="flex-1 flex items-center justify-center p-6 text-center">
+          <div>
+            <h2 className="text-2xl font-semibold mb-6">
+              Дополнительные симптомы не требуются
+            </h2>
+            <div className="flex gap-4 justify-center">
+              <Button variant="outline" onClick={() => router.back()}>← Назад</Button>
+              <Button onClick={() => router.push('/question4')}>Далее →</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  title += ' (можно выбрать несколько)';
   const selectedCount = symptoms.length;
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <ProgressBar currentStep={3} />
 
-      <div className="flex-1 max-w-lg mx-auto px-4 py-8">
-        <h2 className="text-2xl font-semibold mb-8">{title}</h2>
+      <div className="flex-1 max-w-2xl mx-auto px-4 py-6">
+        <h2 className="text-2xl font-semibold mb-2 text-center">{title}</h2>
+        <p className="text-center text-gray-600 mb-6 text-sm">
+          Выберите все, что вас беспокоит
+        </p>
 
-        <div className="space-y-3">
-          {options.map((item) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {uniqueOptions.map((item) => (
             <label
               key={item.key}
-              className={`flex items-start gap-3 p-4 border rounded-2xl cursor-pointer transition-all ${
+              className={`flex items-start gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
                 symptoms.includes(item.key)
                   ? 'border-green-600 bg-green-50'
                   : 'border-gray-200 hover:border-gray-300'
@@ -108,25 +140,30 @@ export default function Question3Screen() {
                 onCheckedChange={() => toggleSymptom(item.key)}
                 className="mt-1"
               />
-              <span className="flex-1">{item.label}</span>
+              <span className="flex-1 text-sm">{item.label}</span>
             </label>
           ))}
         </div>
 
-        {isMulti && selectedCount > 0 && (
-          <p className="text-sm text-gray-500 mt-4">
+        {selectedCount > 0 && (
+          <p className="text-sm text-gray-500 mt-4 text-center">
             Выбрано: {selectedCount}
           </p>
         )}
 
-        <div className="flex gap-3 mt-10 pt-4 border-t">
-          <Button variant="outline" size="lg" onClick={goBack} className="flex-1">
+        <div className="flex gap-3 mt-8">
+          <Button 
+            variant="outline" 
+            size="lg" 
+            onClick={() => router.back()} 
+            className="flex-1 h-12"
+          >
             ← Назад
           </Button>
           <Button
             size="lg"
-            onClick={goNext}
-            className="flex-1 bg-green-600 hover:bg-green-700"
+            onClick={() => router.push('/question4')}
+            className="flex-1 h-12 bg-green-600 hover:bg-green-700"
           >
             Далее →
           </Button>
