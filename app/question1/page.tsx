@@ -4,15 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from 'next/navigation';
 import ProgressBar from '@/components/ProgressBar';
-import { Brain, Heart, Bone, Zap, HelpCircle } from 'lucide-react';
+import { Brain, HeartPulse, Bandage, Activity, Stethoscope } from 'lucide-react';
 import { useState } from 'react';
 
 const options = [
   { key: 'stroke' as const, label: 'Инсульт', icon: Brain, color: 'text-purple-600' },
-  { key: 'infarct' as const, label: 'Инфаркт', icon: Heart, color: 'text-red-600' },
-  { key: 'trauma' as const, label: 'Травма', icon: Bone, color: 'text-orange-600' },
-  { key: 'stress' as const, label: 'Стресс', icon: Zap, color: 'text-yellow-600' },
-  { key: 'other' as const, label: 'Другое', icon: HelpCircle, color: 'text-gray-600' },
+  { key: 'infarct' as const, label: 'Инфаркт', icon: HeartPulse, color: 'text-red-600' },
+  { key: 'trauma' as const, label: 'Травма', icon: Bandage, color: 'text-orange-600' },
+  { key: 'stress' as const, label: 'Стресс', icon: Activity, color: 'text-yellow-600' },
+  { key: 'other' as const, label: 'Другое', icon: Stethoscope, color: 'text-gray-600' },
 ];
 
 export default function Question1Screen() {

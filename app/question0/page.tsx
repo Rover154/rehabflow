@@ -10,21 +10,11 @@ export default function Question0Screen() {
   const { patientInfo, setPatientInfo } = useAnswersStore();
   const router = useRouter();
 
-  const isValid = 
+  const isValid =
     patientInfo.name.trim().length >= 2 &&
     patientInfo.age.trim().length > 0 &&
     patientInfo.height.trim().length > 0 &&
     patientInfo.weight.trim().length > 0;
-
-  const handleHeightWeightChange = (value: string) => {
-    const parts = value.trim().split(/\s+/);
-    if (parts.length >= 1) {
-      setPatientInfo({ height: parts[0] });
-    }
-    if (parts.length >= 2) {
-      setPatientInfo({ weight: parts[1] });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -70,22 +60,44 @@ export default function Question0Screen() {
             />
           </div>
 
-          {/* Рост и вес */}
-          <div>
-            <label className="block text-sm font-medium mb-2 flex items-center gap-2">
-              <Ruler className="w-4 h-4 text-green-600" />
-              <Weight className="w-4 h-4 text-green-600" />
-              Рост и вес (через пробел)
-            </label>
-            <Input
-              value={`${patientInfo.height}${patientInfo.weight ? ' ' + patientInfo.weight : ''}`}
-              onChange={e => handleHeightWeightChange(e.target.value)}
-              placeholder="170 75"
-              className="h-12 text-base font-mono"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Пример: 170 75 (рост в см, вес в кг)
-            </p>
+          {/* Рост и вес - два отдельных поля по 3 клетки */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-green-600" />
+                Рост (см)
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={patientInfo.height}
+                onChange={e => {
+                  const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                  setPatientInfo({ height: value });
+                }}
+                placeholder="170"
+                className="h-12 text-base text-center font-mono"
+                maxLength={3}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+                <Weight className="w-4 h-4 text-green-600" />
+                Вес (кг)
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={patientInfo.weight}
+                onChange={e => {
+                  const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 3);
+                  setPatientInfo({ weight: value });
+                }}
+                placeholder="70"
+                className="h-12 text-base text-center font-mono"
+                maxLength={3}
+              />
+            </div>
           </div>
         </div>
 

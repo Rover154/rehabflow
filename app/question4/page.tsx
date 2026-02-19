@@ -41,31 +41,27 @@ export default function Question4Screen() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <ProgressBar currentStep={4} />
-      <div className="flex-1 max-w-lg mx-auto px-4 py-8">
-        <h2 className="text-2xl font-semibold mb-8">Какой формат занятий вам удобнее?</h2>
-        
-        <div className="space-y-4">
+      <div className="flex-1 max-w-4xl mx-auto px-4 py-8">
+        <h2 className="text-2xl font-semibold mb-8 text-center">Какой формат занятий вам удобнее?</h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {formatOptions.map((opt) => {
             const Icon = opt.icon;
             return (
               <button
                 key={opt.key}
                 onClick={() => setFormat(opt.key as Format)}
-                className={`w-full border-2 rounded-3xl p-6 text-left transition-all hover:border-green-600 ${
+                className={`border-2 rounded-3xl p-6 text-center transition-all hover:border-green-600 flex flex-col items-center justify-center h-full ${
                   format === opt.key
                     ? 'border-green-600 bg-green-50 shadow-sm'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-start gap-4">
-                  <div className={`mt-1 ${format === opt.key ? 'text-green-600' : 'text-gray-400'}`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-lg">{opt.label}</div>
-                    {opt.desc && <div className="text-gray-600 text-sm mt-1.5">{opt.desc}</div>}
-                  </div>
+                <div className={`mb-3 ${format === opt.key ? 'text-green-600' : 'text-gray-400'}`}>
+                  <Icon className="w-10 h-10 mx-auto" />
                 </div>
+                <div className="font-medium text-base mb-1">{opt.label}</div>
+                {opt.desc && <div className="text-gray-600 text-sm text-center">{opt.desc}</div>}
               </button>
             );
           })}

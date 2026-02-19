@@ -36,7 +36,7 @@ export default function ResultScreen() {
             ✓
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            Ваша программа готова!
+            {answers.patientInfo.name ? `${answers.patientInfo.name}, ваша программа готова!` : 'Ваша программа готова!'}
           </h1>
           <p className="text-lg text-gray-600">
             Спасибо за заполнение анкеты
@@ -53,7 +53,7 @@ export default function ResultScreen() {
             {isSelfFormat ? (
               <>
                 <p className="text-gray-700 mb-6">
-                  Вы выбрали формат <strong>&quot;Самостоятельно по методичке&quot;</strong>.
+                  {answers.patientInfo.name && <strong>{answers.patientInfo.name}</strong>} Вы выбрали формат <strong>&quot;Самостоятельно по методичке&quot;</strong>.
                   Мы подготовим для вас персональный комплекс из 10-15 упражнений по цигун.
                 </p>
                 
