@@ -13,22 +13,6 @@ const diagnosisLabels: Record<string, string> = {
   other: 'Другое',
 };
 
-const timeLabels: Record<string, string> = {
-  acute: 'Острый период (до 1 месяца)',
-  '1-3': '1-3 месяца',
-  '3-6': '3-6 месяцев',
-  '6plus': '6-12 месяцев',
-  '1yplus': 'Более года',
-  any: 'Любой период',
-};
-
-const formatLabels: Record<string, string> = {
-  self: 'Самостоятельно по методичке',
-  online: 'Занятия с инструктором онлайн',
-  personal: 'Личные занятия в Новосибирске',
-  help: 'Помощь в выборе формата',
-};
-
 const symptomsLabels: Record<string, string> = {
   // Инсульт
   weak_arm: 'Слабость или неподвижность руки',
@@ -62,6 +46,22 @@ const symptomsLabels: Record<string, string> = {
   concentration: 'Трудности с концентрацией',
 };
 
+const timeLabels: Record<string, string> = {
+  acute: 'Острый период (до 1 месяца)',
+  '1-3': '1–3 месяца',
+  '3-6': '3–6 месяцев',
+  '6plus': '6–12 месяцев',
+  '1yplus': 'Более года',
+  any: 'Любой период',
+};
+
+const formatLabels: Record<string, string> = {
+  self: 'Самостоятельно по методичке',
+  online: 'Занятия с инструктором онлайн',
+  personal: 'Личные занятия в Новосибирске',
+  help: 'Помощь в выборе формата',
+};
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
     // Переводим симптомы
     const symptomsText = data.symptoms?.length > 0
       ? data.symptoms.map((s: string) => symptomsLabels[s] || s).join(', ')
-      : 'Нет';
-    
+      : 'Не указано';
+
     // Формируем сообщение
     const message = `
 🆕 Новый пользователь!
@@ -123,7 +123,7 @@ ${data.comment || 'Нет'}
     // Отправляем в Telegram
     if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
       const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-      
+
       const response = await fetch(telegramUrl, {
         method: 'POST',
         headers: {
@@ -146,7 +146,7 @@ ${data.comment || 'Нет'}
   } catch (error) {
     console.error('Error sending to Telegram:', error);
     return NextResponse.json(
-      { error: 'Failed to send data' },
+      { error: 'Не удалось отправить данные' },
       { status: 500 }
     );
   }
