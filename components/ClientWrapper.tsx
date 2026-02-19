@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import ProgressBar from '@/components/ProgressBar';
 import { ReactNode } from 'react';
 
-const stepPages = ['/question1', '/question2', '/question3', '/question4', '/question5'];
+const stepPages = ['/question0', '/question1', '/question2', '/question3', '/question4', '/question5', '/question6'];
 
 export default function ClientWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
