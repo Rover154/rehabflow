@@ -2,29 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
-import { Readable } from 'stream';
-import fs from 'fs';
-import path from 'path';
 
 // Инициализация OpenAI-compatible клиента для io.net
 const openai = new OpenAI({
   apiKey: process.env.IO_NET_API_KEY,
   baseURL: 'https://api.intelligence.io.solutions/api/v1',
 });
-
-// Маппинг упражнений на изображения из книги
-const exerciseImageMap: Record<string, string> = {
-  'разминка': 'image001.png',
-  'дыхание': 'image002.png',
-  'подъем': 'image003.png',
-  'опускание': 'image004.png',
-  'вращение': 'image005.png',
-  'наклон': 'image006.png',
-  'поворот': 'image007.png',
-  'выпад': 'image008.png',
-  'стойка': 'image009.png',
-  'баланс': 'image010.png',
-};
 
 export async function POST(request: NextRequest) {
   try {
@@ -231,24 +214,6 @@ async function generatePDF(complexData: any, patientName: string): Promise<Buffe
         .text(`${index + 1}. ${exercise.name_ru || 'Упражнение'} ${exercise.name_cn ? `(${exercise.name_cn})` : ''}`)
         .moveDown(0.5);
 
-      // Пытаемся найти изображение для упражнения
-      const imageName = findExerciseImage(exercise.name_ru);
-      if (imageName) {
-        try {
-          const imagePath = path.join(process.cwd(), 'app', 'cigun', 'img', imageName);
-          if (fs.existsSync(imagePath)) {
-            doc.image(imagePath, { 
-              fit: [400, 200], 
-              align: 'center',
-              valign: 'center'
-            });
-            doc.moveDown(0.5);
-          }
-        } catch (err) {
-          console.error(`Ошибка загрузки изображения ${imageName}:`, err);
-        }
-      }
-
       doc
         .fontSize(11)
         .font('Helvetica')
@@ -337,23 +302,6 @@ async function generatePDF(complexData: any, patientName: string): Promise<Buffe
 
     doc.end();
   });
-}
-
-// Функция поиска изображения для упражнения
-function findExerciseImage(exerciseName: string): string | null {
-  if (!exerciseName) return null;
-  
-  const nameLower = exerciseName.toLowerCase();
-  
-  // Ищем совпадения по ключевым словам
-  for (const [keyword, imageName] of Object.entries(exerciseImageMap)) {
-    if (nameLower.includes(keyword)) {
-      return imageName;
-    }
-  }
-  
-  // Если не нашли, возвращаем первое изображение по умолчанию
-  return 'image001.png';
 }
 
 async function sendEmailWithPDF(options: {

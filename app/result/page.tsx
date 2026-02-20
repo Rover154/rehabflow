@@ -46,20 +46,22 @@ export default function ResultScreen() {
           time: answers.time,
           format: answers.format,
           contact: answers.contact,
-          email: answers.contact, // Используем contact как email для отправки
+          email: answers.contact,
         }),
       });
 
       const result = await response.json();
+      
+      console.log('API Response:', response.status, result);
 
       if (!response.ok) {
-        throw new Error(result.error || 'Ошибка генерации');
+        throw new Error(result.error || result.details || 'Ошибка генерации');
       }
 
       alert('✅ Полный комплекс упражнений сгенерирован и отправлен на ваш email!');
     } catch (error) {
       console.error('Ошибка генерации:', error);
-      alert('❌ Не удалось сгенерировать комплекс. Попробуйте позже или свяжитесь с поддержкой.');
+      alert(`❌ Не удалось сгенерировать комплекс: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
     } finally {
       setIsGenerating(false);
     }
