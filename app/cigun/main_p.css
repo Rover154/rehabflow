@@ -1,0 +1,131 @@
+<!--body
+       {BACKGROUND-COLOR: #ffffff; 
+	COLOR: #000000; 
+	FONT-FAMILY: Verdana, Tahoma, Arial, sans-serif; 
+	FONT-SIZE: 100%; 
+	MARGIN: 0px;
+	PADDING-BOTTOM: 0px; 
+	PADDING-LEFT: 0px; 
+	PADDING-RIGHT: 0px; 
+	PADDING-TOP: 0px}
+
+.zag2  {background-color: #bfdfdf;
+	font-family : serif;
+	font-size : 13pt;
+	color : #000000;
+	line-height : 100%;
+	TEXT-ALIGN: "center";
+	font-weight : bold;
+	page-break-before:always;
+	padding-bottom : 6pt;
+	padding-top : 6pt;}
+
+.zag1  {background-color: #efffef;
+	font-family : Times New Roman;
+	font-size : 12pt;
+	color : #000000;
+	line-height : 120%;
+	MARGIN: 0px;
+        margin-bottom : 7pt;
+        margin-top : 17pt;
+	margin-left:5pt;
+	font-weight : bold;}
+
+.izd2  {background-color: #ffffff;
+	color : #000000;
+	font-family : Times New Roman;
+	font-size : 11pt;
+	font-weight:normal;
+	MARGIN: 0px;
+	line-height : 100%;
+	margin-left : 104pt;}
+
+.izd1  {background-color: #ffffff;
+	color : #000000;
+	font-family : Times New Roman;
+	font-size : 9pt;
+	font-weight:normal;
+	MARGIN: 0px;
+	line-height : 100%;
+	margin-left : 104pt;}
+	
+.ogl0  {background-color: #bfdfdf;
+	font-family : serif;
+	font-size : 13pt;
+	color : #000000;
+	line-height : 120%;
+	MARGIN: 0px;
+	padding-left : 0px;
+	font-weight : normal;}
+
+.ogl   {color : #000000;
+	font-family : Verdana;
+	font-size : 10pt;
+	line-height : 120%;
+	margin: 0px;
+	text-indent: -12pt;
+	margin-left : 37pt;
+	margin-right: 14pt;
+	text-decoration:none;
+	text-underline:none;}
+
+.ogl1  {color : #000000;
+	font-family : Verdana;
+	font-size : 10pt;
+	line-height : 120%;
+	margin: 0px;
+	text-indent: -18pt;
+	margin-left : 36pt;
+	margin-right: 14pt;
+	text-decoration:none;
+	text-underline:none;}
+
+.ogl2  {color : #000000;
+	font-family : Verdana;
+	font-size : 10pt;
+	line-height : 120%;
+	margin: 0px;
+	text-indent: -24pt;
+	margin-left : 36pt;
+	margin-right: 14pt;
+	text-decoration:none;
+	text-underline:none;}
+
+.f1    {color : #000000;
+	font-family : Verdana;
+	font-size : 10pt;
+	line-height : 90%;
+	font-weight : normal;
+	text-indent : 17pt;
+	text-align:justify;
+	margin: 0px;
+	margin-left:9pt;
+	margin-right:9pt;}
+
+.f2    {color : #000000;
+	font-family : Verdana;
+	font-size : 9pt;
+	line-height : 90%;
+	font-weight : normal;
+	text-indent : 17pt;
+	text-align:justify;
+	margin: 0px;
+	margin-left:19pt;
+	margin-right:19pt;}
+	
+/* Page Definitions */
+@page
+	{mso-mirror-margins:yes;}
+@page Section1
+	{size:148mm 210mm;
+	margin:5mm 5mm 17mm 23mm;
+	mso-header-margin:5mm;
+	mso-footer-margin:5mm;
+	mso-paper-source:0;}
+
+div.Section1
+	{page:Section1;}  -->
+
+.img-01 {
+	border: 1px solid #D4D4D4;
+}
