@@ -23,7 +23,11 @@ export async function POST(request: NextRequest) {
       email 
     } = body;
 
+    console.log('=== ЗАПРОС НА ГЕНЕРАЦИЮ ===');
     console.log('Получены данные:', body);
+    console.log('IO_NET_API_KEY:', process.env.IO_NET_API_KEY ? 'настроен (длина: ' + process.env.IO_NET_API_KEY.length + ')' : 'НЕ НАСТРОЕН');
+    console.log('EMAIL_USER:', process.env.EMAIL_USER || 'НЕ НАСТРОЕН');
+    console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'настроен' : 'НЕ НАСТРОЕН');
     
     // Проверяем переменные окружения
     const ioNetKey = process.env.IO_NET_API_KEY;
@@ -31,13 +35,17 @@ export async function POST(request: NextRequest) {
     const emailPass = process.env.EMAIL_PASSWORD;
     
     if (!ioNetKey) {
+      console.error('❌ IO_NET_API_KEY отсутствует!');
       return NextResponse.json(
-        { error: 'IO_NET_API_KEY не настроен' },
+        { error: 'IO_NET_API_KEY не настроен', envCheck: {
+          IO_NET_API_KEY: process.env.IO_NET_API_KEY ? 'есть' : 'нет'
+        }},
         { status: 500 }
       );
     }
     
     if (!emailUser || !emailPass) {
+      console.error('❌ EMAIL не настроен!');
       return NextResponse.json(
         { error: 'EMAIL_USER или EMAIL_PASSWORD не настроены' },
         { status: 500 }
