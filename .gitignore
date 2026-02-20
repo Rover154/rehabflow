@@ -58,3 +58,6 @@ next-env.d.ts
 !.vscode/extensions.json
 *.swp
 *.swo
+
+.vercel
+.env*.local

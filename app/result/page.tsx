@@ -1,7 +1,7 @@
 'use client';
 import { useAnswersStore } from '@/stores/useAnswersStore';
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Download, MessageCircle, RefreshCcw, Phone } from "lucide-react";
+import { CheckCircle2, Download, MessageCircle, RefreshCcw, Phone, Book } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -11,17 +11,27 @@ export default function ResultScreen() {
   const [botUrl, setBotUrl] = useState('');
 
   useEffect(() => {
-    // Формируем URL для бота с данными
+    // Формируем URL для бота с данными в start параметре
     const botUsername = 'cigunrehab_bot';
-    const startParam = encodeURIComponent(JSON.stringify({
-      name: answers.patientInfo.name,
-      age: answers.patientInfo.age,
+    
+    // Формируем данные в формате, который ожидает бот
+    const startData = {
+      name: answers.patientInfo.name || '',
+      age: answers.patientInfo.age || '',
+      height: answers.patientInfo.height || '',
+      weight: answers.patientInfo.weight || '',
       diagnoses: answers.diagnoses,
+      otherDescription: answers.otherDescription,
       time: answers.time,
       symptoms: answers.symptoms,
+      chronicDiseases: answers.chronicDiseases,
+      contraindications: answers.contraindications,
       format: answers.format,
-    }));
+      contact: answers.contact,
+      comment: answers.comment,
+    };
     
+    const startParam = encodeURIComponent(JSON.stringify(startData));
     setBotUrl(`https://t.me/${botUsername}?start=${startParam}`);
   }, [answers]);
 
@@ -29,22 +39,22 @@ export default function ResultScreen() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-green-50/30">
-      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
+      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600 text-white rounded-2xl text-3xl mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-green-600 text-white rounded-2xl text-2xl sm:text-3xl mb-3 sm:mb-4">
             ✓
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-2">
             {answers.patientInfo.name ? `${answers.patientInfo.name}, ваша программа готова!` : 'Ваша программа готова!'}
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-base sm:text-lg text-gray-600">
             Спасибо за заполнение анкеты
           </p>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-10 mb-6">
+        <div className="bg-white rounded-3xl shadow-xl p-4 sm:p-6 md:p-10 mb-4 sm:mb-6">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
               Что дальше?
@@ -57,12 +67,12 @@ export default function ResultScreen() {
                   Мы подготовим для вас персональный комплекс из 10-15 упражнений по цигун.
                 </p>
                 
-                <div className="bg-green-50 rounded-2xl p-6 mb-6">
-                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                <div className="bg-green-50 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6">
+                  <h3 className="font-semibold text-base sm:text-lg mb-3 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                     Что включено:
                   </h3>
-                  <ul className="space-y-2 text-gray-700">
+                  <ul className="space-y-2 text-gray-700 text-sm sm:text-base">
                     <li className="flex items-start gap-2">
                       <span className="text-green-600 mt-1">•</span>
                       <span>Персональный комплекс упражнений (10-15 шт)</span>
@@ -82,36 +92,36 @@ export default function ResultScreen() {
                   </ul>
                 </div>
 
-                <div className="bg-blue-50 rounded-2xl p-6 mb-6 text-center">
-                  <p className="text-2xl font-bold text-blue-900 mb-2">299 ₽</p>
-                  <p className="text-sm text-gray-600">Методичка в формате PDF</p>
+                <div className="bg-blue-50 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 text-center">
+                  <p className="text-xl sm:text-2xl font-bold text-blue-900 mb-2">299 ₽</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Методичка в формате PDF</p>
                 </div>
 
                 {/* Кнопка перехода в бот */}
-                <Button 
-                  size="lg" 
-                  className="w-full h-14 text-lg bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg mb-4"
+                <Button
+                  size="lg"
+                  className="w-full h-auto min-h-[56px] py-3 px-4 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg mb-4"
                   onClick={() => window.open(botUrl, '_blank')}
                 >
-                  <Download className="mr-2 h-5 w-5" />
-                  Скачать бесплатную версию через бот
+                  <Download className="mr-2 h-5 w-5 flex-shrink-0" />
+                  <span className="text-center leading-snug">Получить бесплатную версию через бот</span>
                 </Button>
 
                 <p className="text-xs text-center text-gray-500 mb-6">
                   Бот сгенерирует программу и выдаст результат бесплатно на три упражнения
                 </p>
 
-                <div className="border-t pt-6">
-                  <p className="text-center text-gray-600 mb-4">
+                <div className="border-t pt-4 sm:pt-6">
+                  <p className="text-center text-gray-600 mb-4 text-sm sm:text-base">
                     Или купите готовую методичку за 299 ₽
                   </p>
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     variant="outline"
                     className="w-full h-12 border-green-600 text-green-700 hover:bg-green-50"
                     onClick={() => window.open('https://t.me/cigunrehab', '_blank')}
                   >
-                    Оплатить по СБП
+                    Приобрести
                   </Button>
                 </div>
               </>
@@ -121,9 +131,9 @@ export default function ResultScreen() {
                   Мы получили вашу заявку и свяжемся с вами в ближайшее время для уточнения деталей.
                 </p>
                 
-                <div className="bg-green-50 rounded-2xl p-6 mb-6">
-                  <h3 className="font-semibold text-lg mb-3">Ваш выбор:</h3>
-                  <p className="text-gray-700">
+                <div className="bg-green-50 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6">
+                  <h3 className="font-semibold text-base sm:text-lg mb-3">Ваш выбор:</h3>
+                  <p className="text-gray-700 text-sm sm:text-base">
                     {answers.format === 'online' && 'Занятия с инструктором онлайн'}
                     {answers.format === 'personal' && 'Личные занятия в Новосибирске'}
                     {answers.format === 'help' && 'Помощь в выборе формата'}
@@ -133,26 +143,26 @@ export default function ResultScreen() {
             )}
           </div>
 
-          <div className="border-t pt-6">
-            <h3 className="font-semibold mb-4 text-center">Свяжитесь с нами:</h3>
+          <div className="border-t pt-4 sm:pt-6">
+            <h3 className="font-semibold mb-4 text-center text-sm sm:text-base">Свяжитесь с нами:</h3>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
+              <Button
                 variant="outline"
                 size="lg"
-                className="flex-1 h-12"
+                className="flex-1 h-12 text-sm sm:text-base"
                 onClick={() => window.open('tel:+79537902010', '_blank')}
               >
-                <Phone className="mr-2 h-5 w-5" />
+                <Phone className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 +7 953 790 20 10
               </Button>
-              
-              <Button 
+
+              <Button
                 variant="outline"
                 size="lg"
-                className="flex-1 h-12"
+                className="flex-1 h-12 text-sm sm:text-base"
                 onClick={() => window.open('https://t.me/cigunrehab', '_blank')}
               >
-                <MessageCircle className="mr-2 h-5 w-5" />
+                <MessageCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 @cigunrehab
               </Button>
             </div>
@@ -160,19 +170,36 @@ export default function ResultScreen() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center">
-          <Button 
-            variant="ghost"
+        <div className="space-y-3">
+          <Button
+            variant="outline"
             size="lg"
-            className="h-12"
+            className="w-full h-auto min-h-[56px] py-3 px-4 border-purple-600 text-purple-700 hover:bg-purple-50"
             onClick={() => {
-              answers.reset();
-              router.push('/');
+              const link = document.createElement('a');
+              link.href = '/cigun/cigun.zip';
+              link.download = 'cigun.zip';
+              link.click();
             }}
           >
-            <RefreshCcw className="mr-2 h-5 w-5" />
-            Пройти заново
+            <Book className="mr-2 h-5 w-5 flex-shrink-0" />
+            <span className="text-center leading-snug text-sm sm:text-base">Скачать книгу «300 вопросов о цигун»</span>
           </Button>
+
+          <div className="flex justify-center">
+            <Button
+              variant="ghost"
+              size="lg"
+              className="h-12"
+              onClick={() => {
+                answers.reset();
+                router.push('/');
+              }}
+            >
+              <RefreshCcw className="mr-2 h-5 w-5" />
+              Пройти заново
+            </Button>
+          </div>
         </div>
       </div>
     </div>

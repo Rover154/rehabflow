@@ -18,6 +18,7 @@ export default function Question5Screen() {
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
 
   const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const isPhone = (v: string) => {
@@ -26,7 +27,7 @@ export default function Question5Screen() {
   };
 
   const isContactValid = contact.trim().length >= 7 && (isEmail(contact) || isPhone(contact));
-  const isValid = isContactValid && agreed && !isSubmitting;
+  const isValid = isContactValid && agreed && !isSubmitting && email.trim().length > 0 && isEmail(email);
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -49,6 +50,7 @@ export default function Question5Screen() {
           contraindications: store.contraindications,
           format: store.format,
           contact: contact.trim(),
+          email: email.trim(),
           comment: comment.trim(),
         }),
       });
@@ -64,6 +66,7 @@ export default function Question5Screen() {
         body: JSON.stringify({
           ...store,
           contact: contact.trim(),
+          email: email.trim(),
           comment: comment.trim(),
           submittedAt: new Date().toISOString(),
         }),
@@ -94,11 +97,11 @@ export default function Question5Screen() {
     <div className="min-h-screen bg-white flex flex-col">
       <ProgressBar currentStep={7} />
 
-      <div className="flex-1 max-w-md mx-auto px-5 py-6">
-        <h2 className="text-2xl font-semibold mb-2 text-center">
+      <div className="flex-1 max-w-md mx-auto px-4 sm:px-5 py-4 sm:py-6">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-2 text-center">
           Как с вами связаться?
         </h2>
-        <p className="text-center text-gray-600 mb-6 text-sm">
+        <p className="text-center text-gray-600 mb-4 sm:mb-6 text-sm">
           Мы отправим персональную программу на ваш контакт
         </p>
 
@@ -115,6 +118,26 @@ export default function Question5Screen() {
             {!isContactValid && contact && (
               <p className="text-xs text-red-600 mt-1">
                 Укажите корректный телефон или email
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Email для получения методички <span className="text-red-500">*</span>
+            </label>
+            <Input
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="example@mail.ru"
+              type="email"
+              disabled={isSubmitting}
+              className="h-12 text-base"
+              required
+            />
+            {email && !isEmail(email) && (
+              <p className="text-xs text-red-600 mt-1">
+                Введите корректный email
               </p>
             )}
           </div>
@@ -148,17 +171,17 @@ export default function Question5Screen() {
         </div>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 rounded-2xl text-red-800 text-sm">
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-red-50 rounded-2xl text-red-800 text-sm">
             {error}
           </div>
         )}
 
-        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+        <div className="mt-6 sm:mt-8 flex flex-col gap-3">
           <Button
             variant="outline"
             onClick={() => router.back()}
             disabled={isSubmitting}
-            className="flex-1 h-12"
+            className="w-full h-12 text-base"
             size="lg"
           >
             ← Назад
@@ -167,7 +190,7 @@ export default function Question5Screen() {
           <Button
             onClick={handleSubmit}
             disabled={!isValid}
-            className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-base font-medium"
+            className="w-full h-12 bg-green-600 hover:bg-green-700 text-base font-medium"
             size="lg"
           >
             {isSubmitting ? 'Отправка...' : 'Получить рекомендацию →'}
