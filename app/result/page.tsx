@@ -13,26 +13,22 @@ export default function ResultScreen() {
   useEffect(() => {
     // Формируем URL для бота с данными в start параметре
     const botUsername = 'cigunrehab_bot';
-    
-    // Формируем данные в формате, который ожидает бот
+
+    // Формируем компактные данные для бота (только ключевые поля)
     const startData = {
-      name: answers.patientInfo.name || '',
-      age: answers.patientInfo.age || '',
-      height: answers.patientInfo.height || '',
-      weight: answers.patientInfo.weight || '',
-      diagnoses: answers.diagnoses,
-      otherDescription: answers.otherDescription,
-      time: answers.time,
-      symptoms: answers.symptoms,
-      chronicDiseases: answers.chronicDiseases,
-      contraindications: answers.contraindications,
-      format: answers.format,
-      contact: answers.contact,
-      comment: answers.comment,
+      n: answers.patientInfo.name || '',
+      a: answers.patientInfo.age || '',
+      d: answers.diagnoses || [],
+      t: answers.time || '',
+      s: answers.symptoms || [],
+      f: answers.format || '',
     };
+
+    // Кодируем в base64 для компактности
+    const jsonString = JSON.stringify(startData);
+    const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
     
-    const startParam = encodeURIComponent(JSON.stringify(startData));
-    setBotUrl(`https://t.me/${botUsername}?start=${startParam}`);
+    setBotUrl(`https://t.me/${botUsername}?start=${base64Data}`);
   }, [answers]);
 
   const isSelfFormat = answers.format === 'self';

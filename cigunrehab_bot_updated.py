@@ -22,6 +22,7 @@ from telegram.ext import (
 )
 from urllib.parse import unquote
 import base64
+import json
 
 # === Логи ===
 logging.basicConfig(
@@ -138,27 +139,32 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args:
         try:
             start_param = context.args[0]
-            # Декодируем URL-encoded JSON
-            decoded_param = unquote(start_param)
-            data = json.loads(decoded_param)
+            logger.info(f"Получен start параметр: {start_param[:50]}...")
             
-            logger.info(f"Получены данные из приложения: {data}")
+            # Декодируем base64
+            try:
+                # Добавляем padding если нужно
+                padding = 4 - len(start_param) % 4
+                if padding != 4:
+                    start_param += '=' * padding
+                decoded_bytes = base64.b64decode(start_param)
+                decoded_param = decoded_bytes.decode('utf-8')
+                data = json.loads(decoded_param)
+            except Exception as decode_err:
+                logger.error(f"Ошибка декодирования base64: {decode_err}")
+                # Пробуем как обычный JSON
+                data = json.loads(unquote(start_param))
             
-            # Сохраняем данные в профиле
+            logger.info(f"Декодированные данные: {data}")
+            
+            # Сохраняем профиль из компактного формата
             profile = {
-                "name": data.get("name", ""),
-                "age": data.get("age", ""),
-                "height": data.get("height", ""),
-                "weight": data.get("weight", ""),
-                "diagnoses": data.get("diagnoses", []),
-                "otherDescription": data.get("otherDescription", ""),
-                "time": data.get("time"),
-                "symptoms": data.get("symptoms", []),
-                "chronicDiseases": data.get("chronicDiseases", []),
-                "contraindications": data.get("contraindications", ""),
-                "format": data.get("format"),
-                "contact": data.get("contact", ""),
-                "comment": data.get("comment", ""),
+                "name": data.get("n", ""),
+                "age": data.get("a", ""),
+                "diagnoses": data.get("d", []),
+                "time": data.get("t"),
+                "symptoms": data.get("s", []),
+                "format": data.get("f"),
                 "completed": True,
                 "from_app": True,
                 "registered_at": datetime.now().isoformat(),
@@ -167,39 +173,43 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Сохраняем профиль
             user_id = str(update.effective_user.id)
             profiles = load_profiles()
+            is_new_client = user_id not in profiles
             profiles[user_id] = profile
             save_profiles(profiles)
             
             # Отправляем уведомление админу
-            try:
-                admin_message = (
-                    f"🆕 НОВЫЙ КЛИЕНТ из приложения!\n\n"
-                    f"Имя: {profile['name']}\n"
-                    f"Возраст: {profile['age']} лет\n"
-                    f"Рост: {profile['height']} см, Вес: {profile['weight']} кг\n"
-                    f"Диагнозы: {', '.join(profile['diagnoses']) if profile['diagnoses'] else 'не указаны'}\n"
-                    f"Симптомы: {', '.join(profile['symptoms']) if profile['symptoms'] else 'не указаны'}\n"
-                    f"Период: {profile['time']}\n"
-                    f"Формат: {profile['format']}\n"
-                    f"Контакт: {profile['contact']}\n"
-                    f"Telegram ID: {user_id}\n"
-                    f"Комментарий: {profile['comment'][:100] if profile['comment'] else 'нет'}"
-                )
-                await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
-                logger.info("✅ Уведомление админу отправлено")
-            except Exception as e:
-                logger.error(f"⚠️ Не удалось отправить уведомление админу: {e}")
+            if is_new_client:
+                try:
+                    diagnosis_map = {
+                        "stroke": "Инсульт",
+                        "infarct": "Инфаркт",
+                        "trauma": "Травма",
+                        "stress": "Стресс",
+                        "other": "Другое",
+                    }
+                    admin_message = (
+                        f"🆕 НОВЫЙ КЛИЕНТ из приложения!\n\n"
+                        f"Имя: {profile['name']}\n"
+                        f"Возраст: {profile['age']} лет\n"
+                        f"Диагнозы: {', '.join([diagnosis_map.get(d, d) for d in profile['diagnoses']]) if profile['diagnoses'] else 'не указаны'}\n"
+                        f"Симптомы: {', '.join(profile['symptoms']) if profile['symptoms'] else 'не указаны'}\n"
+                        f"Период: {profile['time']}\n"
+                        f"Формат: {profile['format']}\n"
+                        f"Telegram ID: {user_id}"
+                    )
+                    await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=admin_message)
+                    logger.info("✅ Уведомление админу отправлено")
+                except Exception as e:
+                    logger.error(f"⚠️ Не удалось отправить уведомление админу: {e}")
             
             # Приветственное сообщение с данными из приложения
             name = profile['name'] if profile['name'] else update.effective_user.first_name
             await update.message.reply_text(
                 f"🌿 Здравствуйте, {name}!\n\n"
-                f"✅ Ваши данные из приложения получены:\n"
+                f"✅ Ваши данные получены:\n"
                 f"• Возраст: {profile['age']} лет\n"
-                f"• Диагнозы: {', '.join(profile['diagnoses']) if profile['diagnoses'] else 'не указаны'}\n"
-                f"• Симптомы: {', '.join(profile['symptoms']) if profile['symptoms'] else 'не указаны'}\n\n"
-                f"Сейчас я составлю для вас персональный комплекс упражнений цигун...\n\n"
-                f"⏳ Пожалуйста, подождите 10-15 секунд.",
+                f"• Диагнозы: {', '.join([diagnosis_map.get(d, d) for d in profile['diagnoses']]) if profile['diagnoses'] else 'не указаны'}\n\n"
+                f"🧘 Сейчас составлю для вас персональный комплекс...",
                 reply_markup=ReplyKeyboardRemove(),
             )
             
@@ -223,7 +233,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def generate_complex_from_app(update: Update, context: ContextTypes.DEFAULT_TYPE, profile):
     """Генерация комплекса для данных из приложения"""
-    
+
     # Маппинг диагнозов
     diagnosis_map = {
         "stroke": "Инсульт",
@@ -232,7 +242,7 @@ async def generate_complex_from_app(update: Update, context: ContextTypes.DEFAUL
         "stress": "Стресс/нервное перенапряжение",
         "other": "Другое",
     }
-    
+
     # Маппинг симптомов
     symptom_map = {
         "pain": "Боль",
@@ -244,7 +254,7 @@ async def generate_complex_from_app(update: Update, context: ContextTypes.DEFAUL
         "anxiety": "Тревожность",
         "other": "Другое",
     }
-    
+
     # Маппинг периода
     time_map = {
         "acute": "Острый период (до 1 месяца)",
@@ -254,36 +264,33 @@ async def generate_complex_from_app(update: Update, context: ContextTypes.DEFAUL
         "1yplus": "Более 1 года",
         "any": "Любой период",
     }
-    
+
     # Формируем описание профиля для AI
     diagnoses_text = []
     for d in profile.get("diagnoses", []):
         diagnoses_text.append(f"• {diagnosis_map.get(d, d)}")
-    
+
     symptoms_text = []
     for s in profile.get("symptoms", []):
         symptoms_text.append(f"• {symptom_map.get(s, s)}")
-    
+
     # Определяем подвижность (упрощённо - по диагнозам)
     mobility = "полноценная"  # по умолчанию
     if "stroke" in profile.get("diagnoses", []) or "infarct" in profile.get("diagnoses", []):
         mobility = "стоячий_с_опорой"
-    
+
     profile_info = (
         f"Имя: {profile.get('name', 'не указано')}, "
         f"Возраст: {profile.get('age', '?')} лет\n"
-        f"Рост: {profile.get('height', '?')} см, Вес: {profile.get('weight', '?')} кг\n"
         f"Диагнозы:\n" + "\n".join(diagnoses_text) + "\n"
         f"Симптомы:\n" + "\n".join(symptoms_text) + "\n"
         f"Период заболевания: {time_map.get(profile.get('time', ''), profile.get('time', 'не указан'))}\n"
         f"Подвижность: {mobility}\n"
-        f"Хронические заболевания: {', '.join(profile.get('chronicDiseases', [])) or 'нет'}\n"
-        f"Противопоказания: {profile.get('contraindications', 'нет')}\n"
         f"Формат занятий: {profile.get('format', 'не указан')}"
     )
-    
+
     thinking_msg = await update.message.reply_text("🧘 Практикую осознанность и составляю комплекс...")
-    
+
     try:
         response = openai.ChatCompletion.create(
             model="moonshotai/Kimi-K2-Instruct-0905",
