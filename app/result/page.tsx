@@ -9,6 +9,7 @@ export default function ResultScreen() {
   const answers = useAnswersStore();
   const router = useRouter();
   const [botUrl, setBotUrl] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     // Формируем URL для бота с данными в start параметре
@@ -30,6 +31,39 @@ export default function ResultScreen() {
     
     setBotUrl(`https://t.me/${botUsername}?start=${base64Data}`);
   }, [answers]);
+
+  const handleGenerateFullComplex = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate-complex', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: answers.patientInfo.name,
+          age: answers.patientInfo.age,
+          diagnoses: answers.diagnoses,
+          symptoms: answers.symptoms,
+          time: answers.time,
+          format: answers.format,
+          contact: answers.contact,
+          email: answers.contact, // Используем contact как email для отправки
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Ошибка генерации');
+      }
+
+      alert('✅ Полный комплекс упражнений сгенерирован и отправлен на ваш email!');
+    } catch (error) {
+      console.error('Ошибка генерации:', error);
+      alert('❌ Не удалось сгенерировать комплекс. Попробуйте позже или свяжитесь с поддержкой.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const isSelfFormat = answers.format === 'self';
 
@@ -96,29 +130,44 @@ export default function ResultScreen() {
                 {/* Кнопка перехода в бот */}
                 <Button
                   size="lg"
-                  className="w-full h-auto min-h-[56px] py-3 px-4 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg mb-4"
+                  className="w-full h-auto min-h-[64px] py-3 px-4 text-base sm:text-lg bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg mb-4"
                   onClick={() => window.open(botUrl, '_blank')}
                 >
                   <Download className="mr-2 h-5 w-5 flex-shrink-0" />
-                  <span className="text-center leading-snug">Получить бесплатную версию через бот</span>
+                  <div className="flex flex-col leading-tight">
+                    <span>Получить бесплатную</span>
+                    <span>версию через бот</span>
+                  </div>
                 </Button>
 
                 <p className="text-xs text-center text-gray-500 mb-6">
-                  Бот сгенерирует программу и выдаст результат бесплатно на три упражнения
+                  Бот сгенерирует программу и выдаст 
+				  результат бесплатно на три упражнения
                 </p>
 
                 <div className="border-t pt-4 sm:pt-6">
                   <p className="text-center text-gray-600 mb-4 text-sm sm:text-base">
-                    Или купите готовую методичку за 299 ₽
+                    Полный комплекс из 10-15 упражнений с картинками
                   </p>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-full h-12 border-green-600 text-green-700 hover:bg-green-50"
-                    onClick={() => window.open('https://t.me/cigunrehab', '_blank')}
+                    className="w-full h-auto min-h-[48px] border-green-600 text-green-700 hover:bg-green-50"
+                    onClick={handleGenerateFullComplex}
+                    disabled={isGenerating}
                   >
-                    Приобрести
+                    {isGenerating ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Генерация комплекса...
+                      </>
+                    ) : (
+                      'Сгенерировать полный комплекс (299₽)'
+                    )}
                   </Button>
+                  <p className="text-xs text-center text-gray-500 mt-3">
+                    PDF будет отправлен на ваш email
+                  </p>
                 </div>
               </>
             ) : (
