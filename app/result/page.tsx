@@ -108,7 +108,8 @@ export default function ResultScreen() {
                 </Button>
 
                 <p className="text-xs text-center text-gray-500 mb-6">
-                  Бот сгенерирует программу и выдаст результат бесплатно на три упражнения
+                  Бот сгенерирует программу и выдаст 
+                  результат бесплатно на три упражнения
                 </p>
 
                 <div className="border-t pt-4 sm:pt-6">
