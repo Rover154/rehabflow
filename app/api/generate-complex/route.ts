@@ -23,21 +23,42 @@ export async function POST(request: NextRequest) {
       email 
     } = body;
 
-    // Формируем промт для генерации полного комплекса
+    console.log('Получены данные:', body);
+    
+    // Проверяем переменные окружения
+    const ioNetKey = process.env.IO_NET_API_KEY;
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASSWORD;
+    
+    if (!ioNetKey) {
+      return NextResponse.json(
+        { error: 'IO_NET_API_KEY не настроен' },
+        { status: 500 }
+      );
+    }
+    
+    if (!emailUser || !emailPass) {
+      return NextResponse.json(
+        { error: 'EMAIL_USER или EMAIL_PASSWORD не настроены' },
+        { status: 500 }
+      );
+    }
+
+    // Формируем промт для генерации
     const diagnosisMap: Record<string, string> = {
       stroke: 'Инсульт',
       infarct: 'Инфаркт',
       trauma: 'Травма',
-      stress: 'Стресс/нервное перенапряжение',
+      stress: 'Стресс',
       other: 'Другое',
     };
 
     const symptomMap: Record<string, string> = {
       pain: 'Боль',
-      stiffness: 'Скованность движений',
+      stiffness: 'Скованность',
       weakness: 'Слабость',
       dizziness: 'Головокружение',
-      fatigue: 'Быстрая утомляемость',
+      fatigue: 'Утомляемость',
       sleep: 'Нарушения сна',
       anxiety: 'Тревожность',
       other: 'Другое',
@@ -71,55 +92,35 @@ export async function POST(request: NextRequest) {
 - Формат: ${format === 'self' ? 'Самостоятельно' : 'С инструктором'}
 
 ЗАДАЧА:
-Составь ПОЛНЫЙ персональный комплекс из 10-15 упражнений цигун для реабилитации.
-
-ТРЕБОВАНИЯ К КОМПЛЕКСУ:
-1. Учитывай все диагнозы и противопоказания
-2. Начинай с разминки (2-3 упражнения)
-3. Основная часть (6-8 упражнений)
-4. Завершение (2-3 упражнения)
-5. Для каждого упражнения укажи:
-   - Название на русском и китайском
-   - Исходное положение
-   - Пошаговое выполнение (3-5 шагов)
-   - Дыхание
-   - Количество повторений
-   - Время выполнения
-   - Эффект от упражнения
-   - Противопоказания
-
-ДОСТУПНЫЕ ТИПЫ УПРАЖНЕНИЙ (используй эти названия для подбора изображений):
-- Разминка, Дыхание, Подъем рук, Опускание рук
-- Вращение плечами, Наклон вперед, Поворот корпуса
-- Выпад, Стойка всадника, Баланс на одной ноге
-- Подъем на носки, Перекаты, Хлопки
-- Массаж живота, Поглаживание лица
+Составь ПОЛНЫЙ персональный комплекс из 10-15 упражнений цигун.
 
 ФОРМАТ ОТВЕТА (строго JSON):
 {
   "complex_name": "Название комплекса",
   "exercises": [
     {
-      "name_ru": "Название на русском (используй типы из списка выше)",
+      "name_ru": "Название на русском",
       "name_cn": "Название на китайском",
       "position": "Исходное положение",
       "steps": ["шаг 1", "шаг 2", "шаг 3"],
-      "breathing": "Описание дыхания",
-      "repetitions": "Количество повторений",
-      "duration": "Время выполнения",
-      "effect": "Эффект от упражнения",
+      "breathing": "Дыхание",
+      "repetitions": "Повторения",
+      "duration": "Время",
+      "effect": "Эффект",
       "contraindications": "Противопоказания"
     }
   ],
-  "recommendations": "Общие рекомендации по практике",
+  "recommendations": "Общие рекомендации",
   "warnings": "Предупреждения безопасности"
 }`;
 
+    console.log('Отправка запроса к io.net API...');
+    
     // Генерируем комплекс через io.net API
     const completion = await openai.chat.completions.create({
       model: 'moonshotai/Kimi-K2-Instruct-0905',
       messages: [
-        { role: 'system', content: 'Ты профессиональный инструктор цигун. Отвечай ТОЛЬКО в формате JSON без дополнительного текста.' },
+        { role: 'system', content: 'Ты профессиональный инструктор цигун. Отвечай ТОЛЬКО в формате JSON.' },
         { role: 'user', content: prompt }
       ],
       max_tokens: 4000,
@@ -128,24 +129,28 @@ export async function POST(request: NextRequest) {
     });
 
     const responseText = completion.choices[0].message.content || '';
+    console.log('Ответ от AI:', responseText.substring(0, 500) + '...');
     
     // Парсим JSON ответ
     let complexData;
     try {
-      // Очищаем ответ от возможных маркеров кода
       const cleanJson = responseText.replace(/```json\s*|\s*```/g, '').trim();
       complexData = JSON.parse(cleanJson);
     } catch (parseError) {
       console.error('Ошибка парсинга JSON:', parseError);
       return NextResponse.json(
-        { error: 'Ошибка генерации комплекса' },
+        { error: 'Ошибка генерации комплекса', details: String(parseError) },
         { status: 500 }
       );
     }
 
+    console.log('Генерация PDF...');
+    
     // Генерируем PDF
     const pdfBuffer = await generatePDF(complexData, name);
 
+    console.log('Отправка email...');
+    
     // Отправляем email с PDF
     await sendEmailWithPDF({
       to: email || 'rover38354@gmail.com',
@@ -153,6 +158,8 @@ export async function POST(request: NextRequest) {
       complexData,
       pdfBuffer,
     });
+
+    console.log('Готово!');
 
     return NextResponse.json({
       success: true,
@@ -312,7 +319,6 @@ async function sendEmailWithPDF(options: {
 }) {
   const { to, subject, complexData, pdfBuffer } = options;
 
-  // Создаём транспорт для отправки email
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -321,7 +327,6 @@ async function sendEmailWithPDF(options: {
     },
   });
 
-  // Формируем HTML письмо
   const exercisesList = complexData.exercises?.map((ex: any, i: number) => 
     `<li><strong>${i + 1}. ${ex.name_ru || 'Упражнение'}</strong></li>`
   ).join('') || '';
@@ -342,7 +347,6 @@ async function sendEmailWithPDF(options: {
     <p>С заботой о вашем здоровье,<br>Команда Цигун-Реабилитация</p>
   `;
 
-  // Отправляем письмо
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to,
