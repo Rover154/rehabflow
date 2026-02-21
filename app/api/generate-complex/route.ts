@@ -438,8 +438,8 @@ async function sendEmailWithPDF(options: {
     },
   });
 
-  const exercisesList = complexData.exercises?.map((ex: any, i: number) =>
-    `<li><strong>${i + 1}. ${ex.name_ru || 'Упражнение'}</strong></li>`
+  const exercisesList = complexData.exercises?.map((ex: Record<string, unknown>, i: number) =>
+    `<li><strong>${i + 1}. ${(ex as Record<string, string>).name_ru || 'Упражнение'}</strong></li>`
   ).join('') || '';
 
   const htmlContent = `
