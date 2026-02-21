@@ -207,3 +207,41 @@ export default function Question5Screen() {
     </div>
   );
 }
+
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-red-50 rounded-2xl text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="mt-6 sm:mt-8 flex flex-col gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+            disabled={isSubmitting}
+            className="w-full h-12 text-base"
+            size="lg"
+          >
+            ← Назад
+          </Button>
+
+          <Button
+            onClick={handleSubmit}
+            disabled={!isValid}
+            className="w-full h-12 bg-green-600 hover:bg-green-700 text-base font-medium"
+            size="lg"
+          >
+            {isSubmitting ? 'Отправка...' : 'Получить рекомендацию →'}
+          </Button>
+        </div>
+
+        <p className="text-center text-xs text-gray-500 mt-4">
+          Ваши данные защищены и не передаются третьим лицам
+        </p>
+      </div>
+    </div>
+  );
+}
