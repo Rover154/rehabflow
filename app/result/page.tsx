@@ -47,7 +47,7 @@ export default function ResultPage() {
         throw new Error('Failed to generate plan');
       }
 
-      setLoadingStep("Отправка PDF на rover38354@gmmail.com...");
+      setLoadingStep("Отправка PDF на rover38354@gmail.com...");
       await new Promise(r => setTimeout(r, 1000));
 
       setStatus("success");
@@ -69,8 +69,8 @@ export default function ResultPage() {
             Ваш персональный план Цигун был сгенерирован на основе методики "300 вопросов о Цигун".
           </p>
           <div className="bg-slate-100 p-4 rounded-lg text-sm text-slate-500">
-            <p>Копия отправлена на:</p>
-            <p className="font-medium text-slate-700 mt-1">rover38354@gmmail.com</p>
+            <p>Копия отправлена специалисту и на ваш email:</p>
+            <p className="font-medium text-slate-700 mt-1">rover38354@gmail.com</p>
           </div>
           <button 
             onClick={() => setStatus("idle")}
@@ -228,7 +228,7 @@ export default function ResultPage() {
                     )}
                   </button>
                   <p className="text-center text-xs text-slate-400 mt-4">
-                    Безопасная транзакция через io.net • Мгновенная доставка PDF
+                    Безопасная транзакция через io.net • Мгновенная доставка PDF на rover38354@gmail.com
                   </p>
                 </div>
               </form>
