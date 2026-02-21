@@ -16,20 +16,21 @@ interface PatientInfo {
 interface Answers {
   // Анкета пациента
   patientInfo: PatientInfo;
-  
+
   // Диагнозы (множественный выбор)
   diagnoses: Diagnosis[];
   otherDescription: string;
-  
+
   // Остальные вопросы
   time: TimePeriod | null;
   symptoms: string[];
   chronicDiseases: string[];
   contraindications: string;
   format: Format | null;
-  
+
   // Контакты
   contact: string;
+  email: string;
   comment: string;
 }
 
@@ -47,8 +48,8 @@ interface AnswersStore extends Answers {
   toggleChronicDisease: (d: string) => void;
   setContraindications: (c: string) => void;
   setFormat: (f: Format) => void;
-  setContactData: (data: Partial<Pick<Answers, 'contact' | 'comment'>>) => void;
-  
+  setContactData: (data: Partial<Pick<Answers, 'contact' | 'email' | 'comment'>>) => void;
+
   reset: () => void;
 }
 
@@ -67,6 +68,7 @@ const initialState: Answers = {
   contraindications: '',
   format: null,
   contact: '',
+  email: '',
   comment: '',
 };
 

@@ -12,13 +12,13 @@ import ProgressBar from '@/components/ProgressBar';
 
 export default function Question5Screen() {
   const store = useAnswersStore();
-  const { contact, comment, setContactData } = store;
+  const { contact, email: storeEmail, comment, setContactData } = store;
   const router = useRouter();
 
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(storeEmail || '');
 
   const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const isPhone = (v: string) => {
@@ -34,6 +34,9 @@ export default function Question5Screen() {
 
     setIsSubmitting(true);
     setError(null);
+
+    // Сохраняем email в store
+    setContactData({ email: email.trim() });
 
     try {
       // Отправляем данные в Telegram

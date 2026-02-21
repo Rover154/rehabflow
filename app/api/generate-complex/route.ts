@@ -1,26 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
-import PDFDocument from 'pdfkit';
+import { loadCigunBook, findRelevantExercises, getImageBaseUrl } from '@/lib/cigun-book-parser';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Динамический импорт pdfkit для серверной стороны
+const PDFDocument = (global as any).PDFDocument || require('pdfkit');
+
+// Путь к шрифтам pdfkit - используем require.resolve для правильного пути
+const PDFKIT_FONT_PATH = path.dirname(require.resolve('pdfkit')) + '/../js/data';
+
+// Явно указываем, что это серверный код
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Инициализация OpenAI-compatible клиента для io.net
 const openai = new OpenAI({
   apiKey: process.env.IO_NET_API_KEY,
   baseURL: 'https://api.intelligence.io.solutions/api/v1',
+  timeout: 60000, // 60 секунд таймаут
+  maxRetries: 2, // 2 повторные попытки
 });
+
+// Путь к книге цигун
+const CIGUN_BOOK_DIR = path.join(process.cwd(), 'app', 'cigun');
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      name, 
-      age, 
-      diagnoses, 
-      symptoms, 
-      time, 
+    const {
+      name,
+      age,
+      diagnoses,
+      symptoms,
+      time,
       format,
       contact,
-      email 
+      email
     } = body;
 
     console.log('=== ЗАПРОС НА ГЕНЕРАЦИЮ ===');
@@ -28,12 +45,12 @@ export async function POST(request: NextRequest) {
     console.log('IO_NET_API_KEY:', process.env.IO_NET_API_KEY ? 'настроен (длина: ' + process.env.IO_NET_API_KEY.length + ')' : 'НЕ НАСТРОЕН');
     console.log('EMAIL_USER:', process.env.EMAIL_USER || 'НЕ НАСТРОЕН');
     console.log('EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? 'настроен' : 'НЕ НАСТРОЕН');
-    
+
     // Проверяем переменные окружения
     const ioNetKey = process.env.IO_NET_API_KEY;
     const emailUser = process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASSWORD;
-    
+
     if (!ioNetKey) {
       console.error('❌ IO_NET_API_KEY отсутствует!');
       return NextResponse.json(
@@ -43,7 +60,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-    
+
     if (!emailUser || !emailPass) {
       console.error('❌ EMAIL не настроен!');
       return NextResponse.json(
@@ -51,6 +68,27 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Загружаем книгу цигун
+    console.log('Загрузка книги цигун...');
+    const cigunBook = loadCigunBook(CIGUN_BOOK_DIR);
+    
+    // Находим релевантные упражнения для пациента
+    const relevantExercises = findRelevantExercises(
+      cigunBook,
+      diagnoses || [],
+      symptoms || []
+    );
+    
+    console.log(`Найдено ${relevantExercises.length} релевантных упражнений`);
+
+    // Формируем контекст из книги для AI
+    const bookContext = relevantExercises.map((ex, i) => 
+      `Упражнение ${i + 1} (ID: ${ex.id}):
+Вопрос: ${ex.question}
+Ответ: ${ex.answer}
+---`
+    ).join('\n');
 
     // Формируем промт для генерации
     const diagnosisMap: Record<string, string> = {
@@ -81,12 +119,12 @@ export async function POST(request: NextRequest) {
       any: 'Любой период',
     };
 
-    const diagnosesText = diagnoses?.length > 0 
-      ? diagnoses.map((d: string) => diagnosisMap[d] || d).join(', ') 
+    const diagnosesText = diagnoses?.length > 0
+      ? diagnoses.map((d: string) => diagnosisMap[d] || d).join(', ')
       : 'Не указано';
 
-    const symptomsText = symptoms?.length > 0 
-      ? symptoms.map((s: string) => symptomMap[s] || s).join(', ') 
+    const symptomsText = symptoms?.length > 0
+      ? symptoms.map((s: string) => symptomMap[s] || s).join(', ')
       : 'Не указано';
 
     const prompt = `Ты — профессиональный инструктор по цигун с 30-летним опытом реабилитации.
@@ -99,8 +137,11 @@ export async function POST(request: NextRequest) {
 - Симптомы: ${symptomsText}
 - Формат: ${format === 'self' ? 'Самостоятельно' : 'С инструктором'}
 
+КОНТЕКСТ ИЗ КНИГИ "300 ВОПРОСОВ О ЦИГУН":
+${bookContext}
+
 ЗАДАЧА:
-Составь ПОЛНЫЙ персональный комплекс из 10-15 упражнений цигун.
+На основе предоставленных данных из книги "300 вопросов о цигун" составь ПОЛНЫЙ персональный комплекс из 10-15 упражнений цигун для реабилитации пациента.
 
 ФОРМАТ ОТВЕТА (строго JSON):
 {
@@ -115,7 +156,8 @@ export async function POST(request: NextRequest) {
       "repetitions": "Повторения",
       "duration": "Время",
       "effect": "Эффект",
-      "contraindications": "Противопоказания"
+      "contraindications": "Противопоказания",
+      "book_reference": "ID упражнения из книги (число)"
     }
   ],
   "recommendations": "Общие рекомендации",
@@ -123,22 +165,55 @@ export async function POST(request: NextRequest) {
 }`;
 
     console.log('Отправка запроса к io.net API...');
-    
+
     // Генерируем комплекс через io.net API
-    const completion = await openai.chat.completions.create({
-      model: 'moonshotai/Kimi-K2-Instruct-0905',
-      messages: [
-        { role: 'system', content: 'Ты профессиональный инструктор цигун. Отвечай ТОЛЬКО в формате JSON.' },
-        { role: 'user', content: prompt }
-      ],
-      max_tokens: 4000,
-      temperature: 0.7,
-      top_p: 0.9,
-    });
+    let completion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: 'moonshotai/Kimi-K2-Instruct-0905',
+        messages: [
+          { role: 'system', content: 'Ты профессиональный инструктор цигун. Отвечай ТОЛЬКО в формате JSON.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 4000,
+        temperature: 0.7,
+        top_p: 0.9,
+      });
+    } catch (apiError: any) {
+      console.error('❌ Ошибка io.net API:', apiError);
+      
+      // Определяем тип ошибки
+      let errorMessage = 'Ошибка при вызове API';
+      let errorStatus = 500;
+      
+      if (apiError.code === 'ECONNRESET' || apiError.code === 'ETIMEDOUT' || apiError.code === 'ECONNREFUSED') {
+        errorMessage = 'Нет соединения с сервером AI. Проверьте интернет-соединение и попробуйте снова.';
+        errorStatus = 503;
+      } else if (apiError.status === 401) {
+        errorMessage = 'Неверный API ключ io.net';
+        errorStatus = 401;
+      } else if (apiError.status === 429) {
+        errorMessage = 'Превышен лимит запросов API. Попробуйте позже.';
+        errorStatus = 429;
+      } else if (apiError.code === 'EAI_AGAIN' || apiError.code === 'ENOTFOUND') {
+        errorMessage = 'DNS ошибка. Проверьте DNS настройки.';
+        errorStatus = 503;
+      }
+      
+      return NextResponse.json(
+        { 
+          error: errorMessage,
+          details: apiError.message,
+          code: apiError.code,
+          type: apiError.type,
+        },
+        { status: errorStatus }
+      );
+    }
 
     const responseText = completion.choices[0].message.content || '';
     console.log('Ответ от AI:', responseText.substring(0, 500) + '...');
-    
+
     // Парсим JSON ответ
     let complexData;
     try {
@@ -152,13 +227,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Генерация PDF...');
-    
-    // Генерируем PDF
-    const pdfBuffer = await generatePDF(complexData, name);
+    console.log('Генерация PDF с картинками...');
+
+    // Генерируем PDF с картинками из книги
+    const pdfBuffer = await generatePDFWithImages(complexData, name, relevantExercises);
 
     console.log('Отправка email...');
-    
+
     // Отправляем email с PDF
     await sendEmailWithPDF({
       to: email || 'rover38354@gmail.com',
@@ -184,12 +259,14 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generatePDF(complexData: any, patientName: string): Promise<Buffer> {
+async function generatePDFWithImages(complexData: any, patientName: string, bookExercises: any[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ 
-      size: 'A4', 
-      margins: { top: 50, bottom: 50, left: 50, right: 50 } 
+    // Создаем документ
+    const doc = new PDFDocument({
+      size: 'A4',
+      margins: { top: 50, bottom: 50, left: 50, right: 50 },
     });
+    
     const chunks: Buffer[] = [];
 
     doc.on('data', chunk => chunks.push(chunk));
@@ -221,6 +298,13 @@ async function generatePDF(complexData: any, patientName: string): Promise<Buffe
       .text(complexData.complex_name || 'Комплекс упражнений')
       .moveDown(1);
 
+    // Вступление
+    doc
+      .fontSize(12)
+      .font('Helvetica')
+      .text('Данный комплекс составлен на основе книги "300 вопросов о цигун" с учетом ваших индивидуальных особенностей и потребностей.')
+      .moveDown(1);
+
     // Упражнения
     complexData.exercises?.forEach((exercise: any, index: number) => {
       doc
@@ -228,6 +312,26 @@ async function generatePDF(complexData: any, patientName: string): Promise<Buffe
         .font('Helvetica-Bold')
         .text(`${index + 1}. ${exercise.name_ru || 'Упражнение'} ${exercise.name_cn ? `(${exercise.name_cn})` : ''}`)
         .moveDown(0.5);
+
+      // Пытаемся найти картинку из книги по ID упражнения
+      const bookRef = exercise.book_reference || (index < bookExercises.length ? bookExercises[index].id : null);
+      if (bookRef) {
+        const imageFileName = `image${String(bookRef).padStart(3, '0')}.gif`;
+        const imagePath = path.join(CIGUN_BOOK_DIR, 'img', imageFileName);
+        
+        if (fs.existsSync(imagePath)) {
+          try {
+            // Добавляем картинку в PDF
+            doc.image(imagePath, {
+              fit: [400, 300],
+              align: 'center',
+            });
+            doc.moveDown(0.5);
+          } catch (imgError) {
+            console.error(`Ошибка добавления изображения ${imagePath}:`, imgError);
+          }
+        }
+      }
 
       doc
         .fontSize(11)
@@ -313,7 +417,7 @@ async function generatePDF(complexData: any, patientName: string): Promise<Buffe
     doc
       .fontSize(10)
       .font('Helvetica')
-      .text('\n\n---\nСгенерировано автоматически на основе книги "300 вопросов о цигун"', { align: 'center' });
+      .text('\n\n---\nСгенерировано автоматически на основе книги "300 вопросов о цигун"\nwww.ariom.ru', { align: 'center' });
 
     doc.end();
   });
@@ -335,23 +439,25 @@ async function sendEmailWithPDF(options: {
     },
   });
 
-  const exercisesList = complexData.exercises?.map((ex: any, i: number) => 
+  const exercisesList = complexData.exercises?.map((ex: any, i: number) =>
     `<li><strong>${i + 1}. ${ex.name_ru || 'Упражнение'}</strong></li>`
   ).join('') || '';
 
   const htmlContent = `
     <h2>Ваш персональный комплекс цигун готов!</h2>
     <p>Здравствуйте!</p>
-    <p>Мы сгенерировали для вас полный комплекс из ${complexData.exercises?.length || 0} упражнений.</p>
-    
+    <p>Мы сгенерировали для вас полный комплекс из ${complexData.exercises?.length || 0} упражнений на основе книги "300 вопросов о цигун".</p>
+
     <h3>Список упражнений:</h3>
     <ol>${exercisesList}</ol>
-    
+
     <h3>Рекомендации:</h3>
     <p>${complexData.recommendations || 'Следуйте инструкциям в PDF файле.'}</p>
-    
+
     <p><strong>Важно:</strong> Перед началом практики проконсультируйтесь с лечащим врачом.</p>
     
+    <p>В PDF файле содержатся иллюстрации к упражнениям из книги.</p>
+
     <p>С заботой о вашем здоровье,<br>Команда Цигун-Реабилитация</p>
   `;
 

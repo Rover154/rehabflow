@@ -35,6 +35,9 @@ export default function ResultScreen() {
   const handleGenerateFullComplex = async () => {
     setIsGenerating(true);
     try {
+      // Используем email из store или rover38354@gmail.com по умолчанию
+      const targetEmail = answers.email || 'rover38354@gmail.com';
+      
       const response = await fetch('/api/generate-complex', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,19 +49,19 @@ export default function ResultScreen() {
           time: answers.time,
           format: answers.format,
           contact: answers.contact,
-          email: answers.contact,
+          email: targetEmail,
         }),
       });
 
       const result = await response.json();
-      
+
       console.log('API Response:', response.status, result);
 
       if (!response.ok) {
         throw new Error(result.error || result.details || 'Ошибка генерации');
       }
 
-      alert('✅ Полный комплекс упражнений сгенерирован и отправлен на ваш email!');
+      alert(`✅ Полный комплекс упражнений сгенерирован и отправлен на email: ${targetEmail}`);
     } catch (error) {
       console.error('Ошибка генерации:', error);
       alert(`❌ Не удалось сгенерировать комплекс: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
