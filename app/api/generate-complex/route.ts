@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
-import { loadCigunBook, findRelevantExercises } from '@/lib/cigun-book-parser';
+// Используем require для pdfkit чтобы избежать проблем с bundling
+const PDFDocument = require('pdfkit');
 import * as fs from 'fs';
 import * as path from 'path';
+import { loadCigunBook, findRelevantExercises, getImageBaseUrl } from '@/lib/cigun-book-parser';
 
-// Динамический импорт pdfkit для серверной стороны
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const PDFDocument = (global as unknown as object).PDFDocument || require('pdfkit');
-
-// Явно указываем, что это серверный код
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
+// Путь к шрифтам pdfkit - используем require.resolve для правильного пути
+const PDFKIT_FONT_PATH = path.dirname(require.resolve('pdfkit')) + '/../js/data';
 
 // Инициализация OpenAI-compatible клиента для io.net
 const openai = new OpenAI({
   apiKey: process.env.IO_NET_API_KEY,
   baseURL: 'https://api.intelligence.io.solutions/api/v1',
-  timeout: 60000, // 60 секунд таймаут
-  maxRetries: 2, // 2 повторные попытки
 });
 
 // Путь к книге цигун
@@ -34,6 +29,7 @@ export async function POST(request: NextRequest) {
       symptoms,
       time,
       format,
+      contact,
       email
     } = body;
 
@@ -164,51 +160,16 @@ ${bookContext}
     console.log('Отправка запроса к io.net API...');
 
     // Генерируем комплекс через io.net API
-    let completion;
-    try {
-      completion = await openai.chat.completions.create({
-        model: 'moonshotai/Kimi-K2-Instruct-0905',
-        messages: [
-          { role: 'system', content: 'Ты профессиональный инструктор цигун. Отвечай ТОЛЬКО в формате JSON.' },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 4000,
-        temperature: 0.7,
-        top_p: 0.9,
-      });
-    } catch (apiError: unknown) {
-      console.error('❌ Ошибка io.net API:', apiError);
-
-      // Определяем тип ошибки
-      let errorMessage = 'Ошибка при вызове API';
-      let errorStatus = 500;
-
-      const error = apiError as Record<string, unknown>;
-
-      if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
-        errorMessage = 'Нет соединения с сервером AI. Проверьте интернет-соединение и попробуйте снова.';
-        errorStatus = 503;
-      } else if (error.status === 401) {
-        errorMessage = 'Неверный API ключ io.net';
-        errorStatus = 401;
-      } else if (error.status === 429) {
-        errorMessage = 'Превышен лимит запросов API. Попробуйте позже.';
-        errorStatus = 429;
-      } else if (error.code === 'EAI_AGAIN' || error.code === 'ENOTFOUND') {
-        errorMessage = 'DNS ошибка. Проверьте DNS настройки.';
-        errorStatus = 503;
-      }
-
-      return NextResponse.json(
-        {
-          error: errorMessage,
-          details: (error.message as string) || 'Неизвестная ошибка',
-          code: error.code,
-          type: error.type,
-        },
-        { status: errorStatus }
-      );
-    }
+    const completion = await openai.chat.completions.create({
+      model: 'moonshotai/Kimi-K2-Instruct-0905',
+      messages: [
+        { role: 'system', content: 'Ты профессиональный инструктор цигун. Отвечай ТОЛЬКО в формате JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 4000,
+      temperature: 0.7,
+      top_p: 0.9,
+    });
 
     const responseText = completion.choices[0].message.content || '';
     console.log('Ответ от AI:', responseText.substring(0, 500) + '...');
@@ -258,14 +219,14 @@ ${bookContext}
   }
 }
 
-async function generatePDFWithImages(complexData: Record<string, unknown>, patientName: string, bookExercises: Record<string, unknown>[]): Promise<Buffer> {
+async function generatePDFWithImages(complexData: any, patientName: string, bookExercises: any[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     // Создаем документ
     const doc = new PDFDocument({
       size: 'A4',
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
     });
-
+    
     const chunks: Buffer[] = [];
 
     doc.on('data', chunk => chunks.push(chunk));
@@ -305,7 +266,7 @@ async function generatePDFWithImages(complexData: Record<string, unknown>, patie
       .moveDown(1);
 
     // Упражнения
-    (complexData.exercises as Record<string, unknown>[])?.forEach((exercise: Record<string, unknown>, index: number) => {
+    complexData.exercises?.forEach((exercise: any, index: number) => {
       doc
         .fontSize(14)
         .font('Helvetica-Bold')
@@ -425,7 +386,7 @@ async function generatePDFWithImages(complexData: Record<string, unknown>, patie
 async function sendEmailWithPDF(options: {
   to: string;
   subject: string;
-  complexData: Record<string, unknown>;
+  complexData: any;
   pdfBuffer: Buffer;
 }) {
   const { to, subject, complexData, pdfBuffer } = options;
@@ -438,8 +399,8 @@ async function sendEmailWithPDF(options: {
     },
   });
 
-  const exercisesList = complexData.exercises?.map((ex: Record<string, unknown>, i: number) =>
-    `<li><strong>${i + 1}. ${(ex as Record<string, string>).name_ru || 'Упражнение'}</strong></li>`
+  const exercisesList = complexData.exercises?.map((ex: any, i: number) =>
+    `<li><strong>${i + 1}. ${ex.name_ru || 'Упражнение'}</strong></li>`
   ).join('') || '';
 
   const htmlContent = `
