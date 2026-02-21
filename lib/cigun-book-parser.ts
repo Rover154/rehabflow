@@ -31,10 +31,10 @@ export function parseCigunFile(filePath: string): CigunExercise | null {
     
     if (sectionMatch) {
       // Удаляем h1 и h2 из ответа
-      let sectionContent = sectionMatch[1]
+      const sectionContent = sectionMatch[1]
         .replace(/<h1[^>]*>[\s\S]*?<\/h1>/gi, '')
         .replace(/<h2[^>]*>[\s\S]*?<\/h2>/gi, '');
-      
+
       answer = cleanHtml(sectionContent);
     }
     

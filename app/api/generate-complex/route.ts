@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import nodemailer from 'nodemailer';
-import { loadCigunBook, findRelevantExercises, getImageBaseUrl } from '@/lib/cigun-book-parser';
+import { loadCigunBook, findRelevantExercises } from '@/lib/cigun-book-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 
 // Динамический импорт pdfkit для серверной стороны
-const PDFDocument = (global as any).PDFDocument || require('pdfkit');
-
-// Путь к шрифтам pdfkit - используем require.resolve для правильного пути
-const PDFKIT_FONT_PATH = path.dirname(require.resolve('pdfkit')) + '/../js/data';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PDFDocument = (global as unknown as object).PDFDocument || require('pdfkit');
 
 // Явно указываем, что это серверный код
 export const dynamic = 'force-dynamic';
@@ -36,7 +34,6 @@ export async function POST(request: NextRequest) {
       symptoms,
       time,
       format,
-      contact,
       email
     } = body;
 
@@ -179,33 +176,35 @@ ${bookContext}
         temperature: 0.7,
         top_p: 0.9,
       });
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
       console.error('❌ Ошибка io.net API:', apiError);
-      
+
       // Определяем тип ошибки
       let errorMessage = 'Ошибка при вызове API';
       let errorStatus = 500;
-      
-      if (apiError.code === 'ECONNRESET' || apiError.code === 'ETIMEDOUT' || apiError.code === 'ECONNREFUSED') {
+
+      const error = apiError as Record<string, unknown>;
+
+      if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED') {
         errorMessage = 'Нет соединения с сервером AI. Проверьте интернет-соединение и попробуйте снова.';
         errorStatus = 503;
-      } else if (apiError.status === 401) {
+      } else if (error.status === 401) {
         errorMessage = 'Неверный API ключ io.net';
         errorStatus = 401;
-      } else if (apiError.status === 429) {
+      } else if (error.status === 429) {
         errorMessage = 'Превышен лимит запросов API. Попробуйте позже.';
         errorStatus = 429;
-      } else if (apiError.code === 'EAI_AGAIN' || apiError.code === 'ENOTFOUND') {
+      } else if (error.code === 'EAI_AGAIN' || error.code === 'ENOTFOUND') {
         errorMessage = 'DNS ошибка. Проверьте DNS настройки.';
         errorStatus = 503;
       }
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorMessage,
-          details: apiError.message,
-          code: apiError.code,
-          type: apiError.type,
+          details: (error.message as string) || 'Неизвестная ошибка',
+          code: error.code,
+          type: error.type,
         },
         { status: errorStatus }
       );
@@ -259,14 +258,14 @@ ${bookContext}
   }
 }
 
-async function generatePDFWithImages(complexData: any, patientName: string, bookExercises: any[]): Promise<Buffer> {
+async function generatePDFWithImages(complexData: Record<string, unknown>, patientName: string, bookExercises: Record<string, unknown>[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     // Создаем документ
     const doc = new PDFDocument({
       size: 'A4',
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
     });
-    
+
     const chunks: Buffer[] = [];
 
     doc.on('data', chunk => chunks.push(chunk));
@@ -306,7 +305,7 @@ async function generatePDFWithImages(complexData: any, patientName: string, book
       .moveDown(1);
 
     // Упражнения
-    complexData.exercises?.forEach((exercise: any, index: number) => {
+    (complexData.exercises as Record<string, unknown>[])?.forEach((exercise: Record<string, unknown>, index: number) => {
       doc
         .fontSize(14)
         .font('Helvetica-Bold')
@@ -426,7 +425,7 @@ async function generatePDFWithImages(complexData: any, patientName: string, book
 async function sendEmailWithPDF(options: {
   to: string;
   subject: string;
-  complexData: any;
+  complexData: Record<string, unknown>;
   pdfBuffer: Buffer;
 }) {
   const { to, subject, complexData, pdfBuffer } = options;
