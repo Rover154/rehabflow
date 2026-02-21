@@ -1,17 +1,8 @@
-"use client";
-
 import React, { useState } from "react";
+import { generateQigongPlan, ClientData } from "./services/aiService";
 import { BrainCircuit, BookOpen, Send, CheckCircle2, Loader2, Sparkles, Activity } from "lucide-react";
 
-export interface ClientData {
-  name: string;
-  email: string;
-  age: string;
-  goals: string;
-  healthConditions: string;
-}
-
-export default function ResultPage() {
+export function App() {
   const [formData, setFormData] = useState<ClientData>({
     name: "",
     email: "",
@@ -34,19 +25,14 @@ export default function ResultPage() {
     
     try {
       setLoadingStep("Подключение к нейросети io.net...");
+      await new Promise(r => setTimeout(r, 1500));
       
-      const response = await fetch('/api/generate-complex', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate plan');
-      }
-
+      setLoadingStep("Обращение к библиотеке '300 вопросов о Цигун'...");
+      await new Promise(r => setTimeout(r, 1500));
+      
+      setLoadingStep("Генерация персонального комплекса упражнений...");
+      await generateQigongPlan(formData);
+      
       setLoadingStep("Отправка PDF на rover38354@gmmail.com...");
       await new Promise(r => setTimeout(r, 1000));
 

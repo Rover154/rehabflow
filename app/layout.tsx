@@ -1,26 +1,22 @@
-// app/layout.tsx
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
-import ClientWrapper from '@/components/ClientWrapper';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "../src/index.css"; // Reuse existing Tailwind CSS
 
-const inter = Inter({ subsets: ['latin', 'cyrillic'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'RehabFlow — персональная программа цигун-реабилитации',
-  description: 'Подбор безопасных практик после инсульта, инфаркта, травм',
+  title: "RehabFlow",
+  description: "AI-Powered Rehabilitation",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="ru">
-      <body className={inter.className}>
-        <ClientWrapper>{children}</ClientWrapper>
-      </body>
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
