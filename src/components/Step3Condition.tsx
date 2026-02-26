@@ -51,9 +51,9 @@ export function Step3Condition({ onNext, onBack }: Step3ConditionProps) {
         </div>
       )}
 
-      <div className="flex gap-3 mt-8">
-        {onBack && <button type="button" onClick={onBack} className="btn-secondary flex-1"><ArrowLeft className="mr-2 w-5 h-5 inline" /> Назад</button>}
-        <button type="button" onClick={handleSubmit} disabled={selected.length === 0 || (showOtherInput && !otherDetails.trim())} className="btn-primary flex-1">Далее <ArrowRight className="ml-2 w-5 h-5 inline" /></button>
+      <div className="flex gap-3 mt-6 justify-center">
+        {onBack && <button type="button" onClick={onBack} className="btn-secondary flex-1 max-w-xs flex items-center justify-center"><ArrowLeft className="mr-2 w-5 h-5 inline" /> Назад</button>}
+        <button type="button" onClick={handleSubmit} disabled={selected.length === 0 || (showOtherInput && !otherDetails.trim())} className="btn-primary flex-1 max-w-xs flex items-center justify-center">Далее <ArrowRight className="ml-2 w-5 h-5 inline" /></button>
       </div>
     </div>
   );

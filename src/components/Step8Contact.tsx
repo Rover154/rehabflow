@@ -85,9 +85,9 @@ export function Step8Contact({ initialName, onNext, onBack }: Step8ContactProps)
           </div>
         </div>
 
-        <div className="flex gap-3 mt-8">
-          {onBack && <button type="button" onClick={onBack} className="btn-secondary flex-1 flex items-center justify-center"><ArrowLeft className="mr-2 w-5 h-5" /> Назад</button>}
-          <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 flex items-center justify-center font-bold uppercase">
+        <div className="flex gap-3 mt-6 justify-center">
+          {onBack && <button type="button" onClick={onBack} className="btn-secondary flex-1 max-w-xs flex items-center justify-center"><ArrowLeft className="mr-2 w-5 h-5" /> Назад</button>}
+          <button type="submit" disabled={isSubmitting} className="btn-primary flex-1 max-w-xs flex items-center justify-center font-bold uppercase">
             {isSubmitting ? <Loader className="w-5 h-5 animate-spin mr-2" /> : <ArrowRight className="ml-2 w-5 h-5" />}
             {isSubmitting ? 'ОТПРАВКА...' : 'ПОЛУЧИТЬ РЕКОМЕНДАЦИЮ'}
           </button>

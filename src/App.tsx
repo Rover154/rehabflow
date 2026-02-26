@@ -13,6 +13,7 @@ import { FormData, initialData } from './types';
 export function App() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>(initialData);
+  const [isBuying, setIsBuying] = useState(false);
 
   const updateData = (data: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
@@ -110,6 +111,8 @@ ${data.comment ? `- 💬 Комментарий: ${data.comment}` : ''}
   };
 
   const handleBuy = async () => {
+    if (isBuying) return;
+    setIsBuying(true);
     try {
       const conditionLabels: Record<string, string> = {
         stroke: 'Инсульт',
@@ -176,6 +179,8 @@ ${data.comment ? `- 💬 Комментарий: ${data.comment}` : ''}
     } catch (error) {
       console.error('Ошибка отправки email:', error);
       alert('Ошибка отправки письма. Попробуйте позже или свяжитесь с нами по телефону.');
+    } finally {
+      setIsBuying(false);
     }
   };
 
@@ -198,7 +203,7 @@ ${data.comment ? `- 💬 Комментарий: ${data.comment}` : ''}
       case 8:
         return <Step8Contact initialName={formData.name} onNext={(data) => { const finalData = { ...formData, ...data }; updateData(data); handleTelegramSend(finalData); nextStep(); }} onBack={prevStep} />;
       case 9:
-        return <Step9Result name={formData.name} onBuy={handleBuy} />;
+        return <Step9Result name={formData.name} onBuy={handleBuy} isBuying={isBuying} />;
       default:
         return null;
     }
@@ -209,10 +214,8 @@ ${data.comment ? `- 💬 Комментарий: ${data.comment}` : ''}
       <header className="bg-white/80 backdrop-blur-sm border-b border-green-100 py-4 px-6 shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-              R
-            </div>
-            <span className="font-bold text-xl text-gray-800">RehabApp</span>
+            <img src="/logo.png" alt="Второе Дыхание" className="w-10 h-10 rounded-xl shadow-lg" />
+            <span className="font-bold text-xl text-gray-800">Второе Дыхание</span>
           </div>
           {step > 1 && step < 9 && (
             <div className="text-sm font-medium text-gray-500">
@@ -229,7 +232,7 @@ ${data.comment ? `- 💬 Комментарий: ${data.comment}` : ''}
       </main>
 
       <footer className="bg-white/80 border-t border-green-100 py-6 text-center text-gray-400 text-sm">
-        <p>&copy; {new Date().getFullYear()} RehabApp. Все права защищены.</p>
+        <p>&copy; {new Date().getFullYear()} Второе Дыхание. Все права защищены.</p>
         <p className="mt-1">📞 +7 (953) 790-20-10</p>
       </footer>
     </div>

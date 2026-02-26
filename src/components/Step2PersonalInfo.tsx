@@ -67,9 +67,9 @@ export function Step2PersonalInfo({ onNext, onBack }: Step2PersonalInfoProps) {
           </div>
         </div>
 
-        <div className="flex gap-3 mt-8">
-          {onBack && <button type="button" onClick={onBack} className="btn-secondary flex-1 flex items-center justify-center"><ArrowLeft className="mr-2 w-5 h-5" /> Назад</button>}
-          <button type="submit" className="btn-primary flex-1 flex items-center justify-center">Далее <ArrowRight className="ml-2 w-5 h-5" /></button>
+        <div className="flex gap-3 mt-6 justify-center">
+          {onBack && <button type="button" onClick={onBack} className="btn-secondary flex-1 max-w-xs flex items-center justify-center"><ArrowLeft className="mr-2 w-5 h-5" /> Назад</button>}
+          <button type="submit" className="btn-primary flex-1 max-w-xs flex items-center justify-center">Далее <ArrowRight className="ml-2 w-5 h-5" /></button>
         </div>
       </form>
     </div>
